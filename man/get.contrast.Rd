@@ -36,5 +36,4 @@ con_tree <- root.node(con_tree, 1)
 con_tree$node.label[-1] <- round(as.numeric(con_tree$node.label[-1]), 2)
 plot(ladderize(con_tree), cex = 0.5, no.margin = T)
 nodelabels(text = con_tree$node.label)
-#' @export
 }

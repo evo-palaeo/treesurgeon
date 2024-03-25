@@ -861,7 +861,6 @@ gamma.calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 #' @return A list, or multiple lists, of phylogenetic data of length T, where T equals the sum of unique taxa in the input lists.
 #' @details This function can be used to combine seperate lists of phylogenetic characters with non-overlapping taxa. If a taxon does not occur in all input lists, it will be coded as missing '?' for those input list(s). Can be used, for example, to combine molecular and morphological datasets with non-overlapping taxa. Note that taxa must be named identically in each input for the data to be combined succesfully.    
 #' @examples
-#' @examples
 #' data(Lavoue2016)
 #' combined_data <- cat.data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
 #' ## Vissualise data 
@@ -1223,7 +1222,6 @@ sim.g.tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL
 #' fviz_eig(pca_res, addlabels=TRUE, hjust = -0.3)
 #' ## plot PCA results
 #' ggplot(pca_res$x, aes(PC1, PC2)) + geom_point(alpha = 0.4, size = 2) +  xlab(paste("PC1 = ", sum_res$importance[2,1], sep = "")) + ylab(paste("PC2 = ", sum_res$importance[2,2], sep = "")) + theme_minimal()
-#' 
 #' 
 #' @export 
 

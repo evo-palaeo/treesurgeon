@@ -54,5 +54,4 @@ fviz_eig(pca_res, addlabels=TRUE, hjust = -0.3)
 ## plot PCA results
 ggplot(pca_res$x, aes(PC1, PC2)) + geom_point(alpha = 0.4, size = 2) +  xlab(paste("PC1 = ", sum_res$importance[2,1], sep = "")) + ylab(paste("PC2 = ", sum_res$importance[2,2], sep = "")) + theme_minimal()
 
-
 }
