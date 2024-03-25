@@ -2,7 +2,7 @@
 % Please edit documentation in R/treesurgeon.r
 \name{get_tip_priors}
 \alias{get_tip_priors}
-\title{get_tip_priors.}
+\title{Get tip priors.}
 \usage{
 get_tip_priors(morph, extra_state = F)
 }

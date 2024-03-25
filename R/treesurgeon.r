@@ -556,7 +556,7 @@ return(tree)
 }
 
 
-#' get_tip_priors.
+#' Get tip priors.
 #'
 #' Function to extract tip priors for ancestral state estimation from a character vector, list or data.frame. 
 #' @param morph a character vector, list or data.frame coded in 'standard' format (e.g. morphological data).
@@ -653,7 +653,7 @@ get_tip_priors <- function(morph, extra_state = F){
 	return(results)
 }
 
-#' get_contrast matrix.
+#' Get a contrast matrix.
 #'
 #' Function to automatically extract a contrast matrix from a character vector, list or data.frame of standard categorical data (e.g. morphological data).
 #' @param morph a character vector, list or data.frame coded in 'standard' format (e.g. morphological data).

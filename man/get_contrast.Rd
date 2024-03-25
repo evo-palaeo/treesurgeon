@@ -2,7 +2,7 @@
 % Please edit documentation in R/treesurgeon.r
 \name{get_contrast}
 \alias{get_contrast}
-\title{get_contrast matrix.}
+\title{Get a contrast matrix.}
 \usage{
 get_contrast(morph)
 }
