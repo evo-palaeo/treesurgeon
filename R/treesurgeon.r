@@ -48,7 +48,7 @@ library(Quartet)
 #' @references Lavoué, S., 2016. Was Gondwanan breakup the cause of the intercontinental distribution of Osteoglossiformes? A time-calibrated phylogenetic test combining molecular, morphological, and paleontological evidence. Molecular Phylogenetics and Evolution, 99, pp.34-43.
 #' @examples
 #' data(Lavoue2016)
-#' combined_data <- cat.data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
+#' combined_data <- cat_data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
 #' ## Vissualise data 
 #' if (!require("BiocManager", quietly = TRUE))
 #'     install.packages("BiocManager")
@@ -282,7 +282,7 @@ read.nexdat <- function (file, use.part.info = F)
 }
 
 
-#' Convert phyDat to list.
+#' Convert phyDat_to_list.
 #'
 #' This function coverts phylogenetic data in phyDat format to list format, equivalent to the output of read.nexus.data() or read.nexdat(). 
 #' @param x an object of class 'phyDat'.
@@ -290,10 +290,10 @@ read.nexdat <- function (file, use.part.info = F)
 #' @details Note that phyDat objects can be converted to matrix objects using the as.character() function.  
 #' @examples
 #' data("Laurasiatherian")
-#' x <- phyDat.to.list(Laurasiatherian)
+#' x <- phyDat_to_list(Laurasiatherian)
 #' @export
 
-phyDat.to.list<- function(x){
+phyDat_to_list<- function(x){
 	if(class(x) != "phyDat"){
 		stop("data is not phyDat object!")
 	}
@@ -313,11 +313,11 @@ phyDat.to.list<- function(x){
 #' @examples
 #' t1 <- rtree(30);
 #' plot(t1);
-#' t2 <- u.edge.lengths(t1);
+#' t2 <- u_edge_lengths(t1);
 #' plot(t2);
 #' @export
 
-u.edge.lengths <- function(tree){
+u_edge_lengths <- function(tree){
 	if(class(tree) != "phylo"){
 		stop("tree is not 'phylo' object")
 	}
@@ -352,19 +352,19 @@ u.edge.lengths <- function(tree){
 #' @param trees a tree object of class 'multiPhylo'.
 #' @param con a tree object of class 'phylo'.
 #' @param digits integer indicating the number of decimal places to round to.
-#' @return A tree object of class 'phylo' with node labels equivalent to clade support.
+#' @return A tree object of class 'phylo' with node labels equivalent to clade_support.
 #' @details This function is a wrapper for the ape function prop.clades.
 #' @examples
 #' best_tree <- rtree(20)
 #' sample_trees <- list()
 #' for(i in 1:100){ sample_trees[[i]] <- rSPR(best_tree, 1)}
 #' class(sample_trees) <- "multiPhylo"
-#' best_tree <- clade.support(sample_trees, best_tree)
+#' best_tree <- clade_support(sample_trees, best_tree)
 #' plot(best_tree)
 #' nodelabels(text = best_tree$node.label)
 #' @export
 
-clade.support <- function(trees, con, digits = 2){
+clade_support <- function(trees, con, digits = 2){
 	if(is.rooted(con) == F){
 		stop("Consensus tree is not rooted!")
 	}
@@ -376,7 +376,7 @@ clade.support <- function(trees, con, digits = 2){
 #' Root a tree below a user-specified node.
 #'
 #' Function to root a tree at the midpoint of the branch ancestral to the user-specified node. 
-#' @usage root.node(tree, node)
+#' @usage root_node(tree, node)
 #' @param tree a tree object of class 'phylo'.
 #' @param node number of the node or tip descending from the target branch in tree$edge. Alternatively, the user can specify a numeric vector of node/tip numbers, in which case the function will attempt to root the tree on the edge descending from the most recent common ancestor of the specified nodes/tips.
 #' @return A tree object of class 'phylo'.
@@ -386,7 +386,7 @@ clade.support <- function(trees, con, digits = 2){
 #' t <- rtree(10)
 #' plot(t, label.offset = 0.1)
 #' tiplabels()
-#' t2 <- root.node(t, 2)
+#' t2 <- root_node(t, 2)
 #' plot(t2, label.offset = 0.1)
 #' tiplabels()
 #' ## Example without edge lengths
@@ -394,12 +394,12 @@ clade.support <- function(trees, con, digits = 2){
 #' t3$edge.length <- NULL
 #' plot(t3, label.offset = 0.1)
 #' tiplabels()
-#' t4 <- root.node(t3, 2)
+#' t4 <- root_node(t3, 2)
 #' plot(t4, label.offset = 0.1)
 #' tiplabels()
 #' @export
 
-root.node <- function(tree, node){
+root_node <- function(tree, node){
 	if(length(node) > 1){
 		if(is.rooted(tree) == F){
 			stop("tree is unrooted!")
@@ -423,24 +423,24 @@ root.node <- function(tree, node){
 #' Root multiple trees below a user-specified node.
 #'
 #' Function to root all trees in a multiPhylo object at the midpoint of a branch ancestral to a user-specified node. 
-#' @usage root.node(trees, node)
+#' @usage root_node(trees, node)
 #' @param trees a tree object of class 'multiPhylo'.
 #' @param node number of the node or tip descending from the target branch in tree$edge. Alternatively, the user can specify a numeric vector of node/tip numbers, in which case the function will attempt to root the tree on the edge descending from the most recent common ancestor of the specified nodes/tips.
 #' @return a tree object of class 'phylo'.
-#' @details see help for root.node(). This function assumes that tip labels are identical in each tree of the multiPhylo object. Internal node labels will differ between trees of different topologies, thus it is recommended that multiPhylo objects are rooted by specifying a tip or multiple tips.  
+#' @details see help for root_node(). This function assumes that tip labels are identical in each tree of the multiPhylo object. Internal node labels will differ between trees of different topologies, thus it is recommended that multiPhylo objects are rooted by specifying a tip or multiple tips.  
 #' @examples
 #' trees <- rmtree(100, 10)
 #' trees2 <- root.multi(trees, 2)
 #' @export
 
-root.multi <- function(trees, node){
+root_multi <- function(trees, node){
 	trees <- .compressTipLabel(trees)
 	if(length(node) > 1){
 		if(any(is.rooted(trees) == F)){
 			stop("some trees are unrooted!")
 		}
 	}
-	trees <- lapply(trees, FUN = root.node, node = 1)
+	trees <- lapply(trees, FUN = root_node, node = 1)
 	class(trees) <- "multiPhylo"
 	return(trees)
 }
@@ -471,16 +471,16 @@ root.multi <- function(trees, node){
 #' ## get maximum clade credibility tree
 #' mcc <- maxCladeCred(trees)
 #' plot(mcc)
-#' ## calculate clade support values
-#' mcc <- clade.support(trees, mcc, digits = 2)
+#' ## calculate clade_support values
+#' mcc <- clade_support(trees, mcc, digits = 2)
 #' nodelabels(text = mcc$node.label)
 #' ## collapse nodes with less than 50% support 
-#' mcc_collapsed <- collapse.thresh(mcc, 0.5)
+#' mcc_collapsed <- collapse_thresh(mcc, 0.5)
 #' plot(mcc_collapsed)
 #' nodelabels(text = mcc_collapsed$node.label)
 #' @export
 
-collapse.thresh <- function(tree, threshold){
+collapse_thresh <- function(tree, threshold){
 	if(is.numeric(tree$node.label) == F){
 		stop("tree requires numeric node labels!")
 	}
@@ -504,7 +504,7 @@ collapse.thresh <- function(tree, threshold){
 #' plot(t, show.tip.label = F)
 #' @export
 
-make.sym.tree <- function(n = 32){
+make_sym_tree <- function(n = 32){
 	if(((log2(n))%%1==0) == FALSE){
 		stop("n is not in the geometric sequence: a1= 2, r = 2")
 	}
@@ -535,10 +535,11 @@ make.sym.tree <- function(n = 32){
 #' @param n number of tips to generate.
 #' @return a tree object of class 'phylo'.
 #' @examples
-#' t <- make.asym.tree(64)
+#' t <- make_asym_tree(64)
 #' plot(t, show.tip.label = F)
 #' @export
-make.asym.tree <- function(n = 32){
+
+make_asym_tree <- function(n = 32){
 	taxa <- paste("t", 1:n, sep = "")
 	taxa <- as.list(taxa)
 	bl <- 1/(n - 1)
@@ -555,7 +556,7 @@ return(tree)
 }
 
 
-#' Get tip priors.
+#' get_tip_priors.
 #'
 #' Function to extract tip priors for ancestral state estimation from a character vector, list or data.frame. 
 #' @param morph a character vector, list or data.frame coded in 'standard' format (e.g. morphological data).
@@ -567,14 +568,14 @@ return(tree)
 #' data(vert_data)
 #' head(vert_data$morph)
 #' ## Convert secondary osteon character to tip priors, interpreting inapplicable ('-') as an additional state (i.e. absent).
-#' tp <- get.tip.priors(vert_data$morph[,2], extra_state = T)
+#' tp <- get_tip_priors(vert_data$morph[,2], extra_state = T)
 #' colnames(tp[[1]]) <- c("bone absent", "secondary osteons absent", "secondary osteons present")
 #' ## conduct ancestral state analysis using phytools.
 #' fitER <- fitMk(tree = vert_data, x = tp[[1]], model = "ER")
 #' plot(ancr(fitER), legend = "topleft")
 #' @export
 
-get.tip.priors <- function(morph, extra_state = F){
+get_tip_priors <- function(morph, extra_state = F){
 	if(is.atomic(morph) == T){
 		morph_df <- as.data.frame(morph)
 	} else if(class(morph) == "list"){
@@ -652,7 +653,7 @@ get.tip.priors <- function(morph, extra_state = F){
 	return(results)
 }
 
-#' Get contrast matrix.
+#' get_contrast matrix.
 #'
 #' Function to automatically extract a contrast matrix from a character vector, list or data.frame of standard categorical data (e.g. morphological data).
 #' @param morph a character vector, list or data.frame coded in 'standard' format (e.g. morphological data).
@@ -664,21 +665,21 @@ get.tip.priors <- function(morph, extra_state = F){
 #' library(TreeSearch)
 #' data("inapplicable.datasets")
 #' morph <- inapplicable.datasets$Vinther2008
-#' ## get contrast matrix
-#' cm <- get.contrast(morph)
+#' ## get_contrast matrix
+#' cm <- get_contrast(morph)
 #' ## Convert data to phyDat format
 #' pdat <- phyDat(data = morph, type = "USER", contrast = cm)
 #' ## Run parsimony analysis
 #' trees <- MaximizeParsimony(dataset = pdat)
 #' ## Plot consensus tree and support values
 #' con_tree <- consensus(trees, p = 0.5)
-#' con_tree <- root.node(con_tree, 1)
+#' con_tree <- root_node(con_tree, 1)
 #' con_tree$node.label[-1] <- round(as.numeric(con_tree$node.label[-1]), 2)
 #' plot(ladderize(con_tree), cex = 0.5, no.margin = T)
 #' nodelabels(text = con_tree$node.label)
 #' @export
 
-get.contrast <- function(morph){
+get_contrast <- function(morph){
 	if(is.atomic(morph) == T){
 		morph_df <- as.data.frame(morph)
 	} else if(class(morph) == "list"){
@@ -733,7 +734,7 @@ get.contrast <- function(morph){
 #' Generate an exponential node calibration
 #'
 #' Function to generate an exponential node calibration for Bayesian molecular clock analysis. 
-#' @usage exp.calib(age_min, age_max, position, xlim = NULL, ylim = NULL)
+#' @usage exp_calib(age_min, age_max, position, xlim = NULL, ylim = NULL)
 #' @param age_min hard minimum fossil calibration.
 #' @param age_max soft maximum fossil calibration.
 #' @param position numeric value between 0 and 1, which determines the percentile of the soft maximum age. 
@@ -746,12 +747,12 @@ get.contrast <- function(morph){
 #' par(mar = c(2.2,2.2,1.5,1.5))
 #' par(mfrow=c(2,1))
 #' ##plot calibration assuming a very good fossil record (i.e. low probability the age of the node is older than the soft maximum)
-#' exp.calib(457.5, 636.1, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
+#' exp_calib(457.5, 636.1, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
 #' ##plot calibration assuming a poor fossil record (i.e. high probability the age of the node is older than the soft maximum)
-#' exp.calib(457.5, 636.1, 0.75, xlim = c(0, 1000), ylim = c(0, 0.025))
+#' exp_calib(457.5, 636.1, 0.75, xlim = c(0, 1000), ylim = c(0, 0.025))
 #' @export
 
-exp.calib <- function(age_min, age_max, position, xlim = NULL, ylim = NULL){
+exp_calib <- function(age_min, age_max, position, xlim = NULL, ylim = NULL){
 	if(position > 1 | position <= 0){
 		stop("position must be between 0 and 1")
 	}
@@ -782,7 +783,7 @@ exp.calib <- function(age_min, age_max, position, xlim = NULL, ylim = NULL){
 #' Generate a gamma-shaped node calibration
 #'
 #' Function to generate a gamma-shaped node calibration for Bayesian molecular clock analysis. 
-#' @usage gamma.calib(age_min, age_max, position, xlim = NULL, ylim = NULL)
+#' @usage gamma_calib(age_min, age_max, position, xlim = NULL, ylim = NULL)
 #' @param age_min hard minimum fossil calibration.
 #' @param age_max soft maximum fossil calibration.
 #' @param shape shape parameter for the gamma distribution.
@@ -796,14 +797,14 @@ exp.calib <- function(age_min, age_max, position, xlim = NULL, ylim = NULL){
 #' par(mar = c(2.2,2.2,1.5,1.5))
 #' par(mfrow=c(3,1))
 #' ##plot calibration assuming a low probability the age of the node is older than the soft maximum age and a low probability the age of the node is older than the hard-minimum age.
-#' gamma.calib(457.5, 636.1, 1, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
+#' gamma_calib(457.5, 636.1, 1, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
 #' ##plot calibration assuming a low probability the age of the node is older than the soft maximum age and a high probability the age of the node is older than the hard-minimum age.
-#' gamma.calib(457.5, 636.1, 3, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
+#' gamma_calib(457.5, 636.1, 3, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
 #' ##plot calibration assuming a high probability the age of the node is older than the soft maximum age and a high probability the age of the node is older than the hard-minimum age.
-#' gamma.calib(457.5, 636.1, 3, 0.75, xlim = c(0, 1000), ylim = c(0, 0.025))
+#' gamma_calib(457.5, 636.1, 3, 0.75, xlim = c(0, 1000), ylim = c(0, 0.025))
 #' @export
 
-gamma.calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = NULL){
+gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = NULL){
 	if(position > 1 | position <= 0){
 		stop("position must be between 0 and 1")
 	}
@@ -862,7 +863,7 @@ gamma.calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 #' @details This function can be used to combine seperate lists of phylogenetic characters with non-overlapping taxa. If a taxon does not occur in all input lists, it will be coded as missing '?' for those input list(s). Can be used, for example, to combine molecular and morphological datasets with non-overlapping taxa. Note that taxa must be named identically in each input for the data to be combined succesfully.    
 #' @examples
 #' data(Lavoue2016)
-#' combined_data <- cat.data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
+#' combined_data <- cat_data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
 #' ## Vissualise data 
 #' if (!require("BiocManager", quietly = TRUE))
 #'     install.packages("BiocManager")
@@ -879,7 +880,7 @@ gamma.calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 #' 
 #' @export
 
-cat.data <- function(..., use.part.info = F){
+cat_data <- function(..., use.part.info = F){
 	partitions <- list(...)
 	names(partitions) <- sprintf("p%d", seq(length(partitions)))
 	taxa <- sort(unique(unlist(lapply(partitions, names))))
@@ -955,12 +956,12 @@ UB <- function(tree1, tree2){
 	return(part1 - SB)}
 
 
-#' Calculate the likelihood of the 'Total Garbage' model
+#' Calculate the likelihood of the 'total_garbage' model
 #'
-#' Function to calculate the likelihood of the 'Total Garbage' model from Harmon (2019).  
+#' Function to calculate the likelihood of the 'total_garbage' model from Harmon (2019).  
 #' @param tip_states an object of class 'character'.
-#' @details The 'Total Garbage' model from Harmon (2019) is designed to test if your data provide no informatio about historical patterns of character change. It is equivalent to drawing states at random from a hat. Consider a set of tip_states and an evolutionary model with transition matrix Q. If likeihood(Q) given tip_states is similar to likelihood(Total Garbage) given tip_states, then tip_states contains little historical information from which to infer state changes. However if likeihood(Q) given tip_states is greater than likelihood(Total Garbage) given tip_states, tip_states does contain some information about historical character changes.    
-#' @return A numeric value equal to the likelihood of the 'Total Garbage' model given tip_states. 
+#' @details The 'total_garbage' model from Harmon (2019) is designed to test if your data provide no informatio about historical patterns of character change. It is equivalent to drawing states at random from a hat. Consider a set of tip_states and an evolutionary model with transition matrix Q. If likeihood(Q) given tip_states is similar to likelihood(total_garbage) given tip_states, then tip_states contains little historical information from which to infer state changes. However if likeihood(Q) given tip_states is greater than likelihood(total_garbage) given tip_states, tip_states does contain some information about historical character changes.    
+#' @return A numeric value equal to the likelihood of the 'total_garbage' model given tip_states. 
 #' @references Harmon, L., 2019. Phylogenetic comparative methods: learning from trees. https://lukejharmon.github.io/pcm/
 #' @examples
 #' ## simulate some data with slow evolutionary rates
@@ -971,8 +972,8 @@ UB <- function(tree1, tree2){
 #' fitMK <- fitMk(tree, x = true_history$states, model = "ER")
 #' ## Compare likelihoods. 
 #' fitMK$logLik
-#' total.garbage(true_history$states)
-#' fitMK$logLik > total.garbage(true_history$states)
+#' total_garbage(true_history$states)
+#' fitMK$logLik > total_garbage(true_history$states)
 #' ## simulate some data with very fast evolutionary rates
 #' tree <- rtree(50)
 #' Q <- matrix(c(-100, 100, 100, -100), nrow = 2, ncol = 2)
@@ -981,11 +982,11 @@ UB <- function(tree1, tree2){
 #' fitMK <- fitMk(tree, x = true_history$states, model = "ER")
 #' ## Compare likelihoods. 
 #' fitMK$logLik
-#' total.garbage(true_history$states)
-#' fitMK$logLik > total.garbage(true_history$states)
+#' total_garbage(true_history$states)
+#' fitMK$logLik > total_garbage(true_history$states)
 #' @export
 
-total.garbage <- function(tip_states){
+total_garbage <- function(tip_states){
 	n <- length(tip_states)
 	state_count <- table(tip_states)
 	res <- numeric()
@@ -1016,11 +1017,11 @@ total.garbage <- function(tip_states){
 #' fitER <- fitMk(tree, x = true_history$states, model = "ER")
 #' fitARD <- fitMk(tree, x = true_history$states, model = "ARD")
 #' ## Calculate information criteria. 
-#' get.info(fitER$logLik, 1, 50)
-#' get.info(fitARD$logLik, 2, 50)
+#' get_info(fitER$logLik, 1, 50)
+#' get_info(fitARD$logLik, 2, 50)
 #' @export 
 
-get.info <- function(loglik, k, n){
+get_info <- function(loglik, k, n){
 	AIC <- 2*k-2*loglik
 	AICc <- AIC + (2*k^2 + 2*k)/ (n - k - 1)
 	BIC <- k*log(n)-2*loglik
@@ -1052,18 +1053,18 @@ get.info <- function(loglik, k, n){
 #' fitARD <- fitMk(tree, x = true_history$states, model = "ARD")
 #' ## Calculate model weights. 
 #' logL <- c(fitER$logLik, fitARD$logLik)
-#' m.wts <- comp.models(loglik = logL, k = c(1, 2), n = 50, method = "BIC", m.names = c("ER", "ARD")) 
+#' m.wts <- comp_models(loglik = logL, k = c(1, 2), n = 50, method = "BIC", m.names = c("ER", "ARD")) 
 #' m.wts 
 #' 
 #' @export 
 
-comp.models <- function(loglik, k, n, method = "AIC", m.names = NULL){
+comp_models <- function(loglik, k, n, method = "AIC", m.names = NULL){
   x <- which(c("AIC", "AICc", "BIC") == method)
   l <- length(loglik)
   if(is.null(m.names)){
   	m.names <- 1:l
   }
-  info <- get.info(loglik, k, n)[(l*x - (l-1)):(l*x)]
+  info <- get_info(loglik, k, n)[(l*x - (l-1)):(l*x)]
   weight <- exp(-0.5 * (info - min(info))) / sum(exp(-0.5 * (info - min(info))))
   results <- data.frame("model" = m.names, "loglik" = loglik, "k" = k, "n" = n, "info" = info, "info_wt" = weight)
   colnames(results)[5:6] <- c(method, paste(method, "_wt", sep = ""))
@@ -1082,23 +1083,23 @@ comp.models <- function(loglik, k, n, method = "AIC", m.names = NULL){
 #' @param ext_t numeric. The desired generation in which to simulate a mass extinction.
 #' @param ext_s numeric. The severity of the mass extinction between 0 and 1.
 #' @return An object of class 'phylo'. 
-#' @details This function simulates an evolutionary process in discrete time under the assumption of competitive exclusion (Gause's law). The progenitor species starts with an integer value = 0, which represents the species' niche. Each generation, a species can speciate (produce a daughter species). Speciation is assumed to be budding. Daughter species inherit the parents trait +/- 1. This assumes daughter species occupy a niche close to it's parent. Each generation, the order in which species attempt to speciate is randomised. If a species attempts to speciate, yet the daughter lineage would occupy an already occupied niche, speciation does not occur. If the niche of a species becomes occupied before the species can attempt to speciate, that species instead becomes exitinct. Users can optionally specify a mass extinction using the ext logical argument. The mass extinction will occur at the generation specied by the user using the ext_t argument. The number of lineages that become extinct at the mass extinction interval is equal to the number of extant species * the mass extinction severity (ext_s), rounded to the nearest integer. Lineages that become extinct are determined randomly. The sim.g.tree() function effectively simulates a process whereby the extinction rate is proportional to the number of extant species. Becuase of this, it produces tree topologies quite unlike those of birth-death trees. Trees produced by sim.g.tree() tend to be more asymmetrical (unbalanced) and have a higher proportion of extinct lineages. Diversification occurs linearly, rather than exponentially.  
+#' @details This function simulates an evolutionary process in discrete time under the assumption of competitive exclusion (Gause's law). The progenitor species starts with an integer value = 0, which represents the species' niche. Each generation, a species can speciate (produce a daughter species). Speciation is assumed to be budding. Daughter species inherit the parents trait +/- 1. This assumes daughter species occupy a niche close to it's parent. Each generation, the order in which species attempt to speciate is randomised. If a species attempts to speciate, yet the daughter lineage would occupy an already occupied niche, speciation does not occur. If the niche of a species becomes occupied before the species can attempt to speciate, that species instead becomes exitinct. Users can optionally specify a mass extinction using the ext logical argument. The mass extinction will occur at the generation specied by the user using the ext_t argument. The number of lineages that become extinct at the mass extinction interval is equal to the number of extant species * the mass extinction severity (ext_s), rounded to the nearest integer. Lineages that become extinct are determined randomly. The sim_g_tree() function effectively simulates a process whereby the extinction rate is proportional to the number of extant species. Becuase of this, it produces tree topologies quite unlike those of birth-death trees. Trees produced by sim_g_tree() tend to be more asymmetrical (unbalanced) and have a higher proportion of extinct lineages. Diversification occurs linearly, rather than exponentially.  
 #' @examples
 #' ## Simulate a tree of approx. 200 taxa
-#' t1 <- sim.g.tree(b = 0.2, n = 200, t = 100000, ext = F)
+#' t1 <- sim_g_tree(b = 0.2, n = 200, t = 100000, ext = F)
 #' plot(ladderize(t1), show.tip.label = F, direction = "upwards", no.margin = T)
 #' ## Simulate a tree of 200 generations, with no extinction.
 #' set.seed(1)
-#' t2 <- sim.g.tree(b = 0.2, n = 10000, t = 200, ext = F)
+#' t2 <- sim_g_tree(b = 0.2, n = 10000, t = 200, ext = F)
 #' plot(ladderize(t2), show.tip.label = F, direction = "upwards", no.margin = T)
 #' ## Simulate a tree of 200 generations, with a mass extinction at gen 100.
 #' set.seed(1)
-#' t3 <- sim.g.tree(b = 0.2, n = 10000, t = 200, ext = T, ext_t = 100, ext_s = 0.9)
+#' t3 <- sim_g_tree(b = 0.2, n = 10000, t = 200, ext = T, ext_t = 100, ext_s = 0.9)
 #' plot(ladderize(t3), show.tip.label = F, direction = "upwards", no.margin = T)
 #' 
 #' @export 
 
-sim.g.tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL){
+sim_g_tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL){
 	if(b <= 0 | b >1 ){
 		stop("Birth rate (b) must be between 0 and 1")
 	}
@@ -1192,7 +1193,7 @@ sim.g.tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL
 #' @param slices numeric. Number of sub matrices to compute
 #' @param normalise logical. If T, distance metric is normalised.  
 #' @return A square matrix of tree to tree distances. 
-#' @details This function uses the foreach package to calculate tree to tree distances in parallel. Foreach allows for parallel computation of matrices, however tree to tree distance matrices are symmetrical, thus simply using foreach to calculate each cell of the matrix would result in 50 percent redundancy. To lower the amount of redundancy, the function splits the square matrix into a user specifed number of rectangular matrices (using the argument 'slices'). These are dealt with in serial, but each bvalue of the rectangular matrices is computed in parallel. For example, if length(trees) == 99, and slices == 3, the function will split the calculation into three submatrices x[1:33, 1:99], x[34:66, 34:99] and x[67:99, 67:99]. This lowers the redundancy from 50 percent to less than 25 percent. In theory, tree distance matrices can be computed without any redundancy, for example using the future.apply package. However, in practice, I have found this to be nowhere near as fast. Whether or not the dist.m() function is faster than computing the distances in serial depends on a number of factors including the number of trees, the number of tips, the complexity of the distance metric and the number of availible cores. In general, this function is recommended for computing distances between > 1000 trees. The ideal number of slices is difficult to determine. A greater number of slices decreases redundancy but increases the number of serial operations. In general, I recommend setting slices to 3. 
+#' @details This function uses the foreach package to calculate tree to tree distances in parallel. Foreach allows for parallel computation of matrices, however tree to tree distance matrices are symmetrical, thus simply using foreach to calculate each cell of the matrix would result in 50 percent redundancy. To lower the amount of redundancy, the function splits the square matrix into a user specifed number of rectangular matrices (using the argument 'slices'). These are dealt with in serial, but each bvalue of the rectangular matrices is computed in parallel. For example, if length(trees) == 99, and slices == 3, the function will split the calculation into three submatrices x[1:33, 1:99], x[34:66, 34:99] and x[67:99, 67:99]. This lowers the redundancy from 50 percent to less than 25 percent. In theory, tree distance matrices can be computed without any redundancy, for example using the future.apply package. However, in practice, I have found this to be nowhere near as fast. Whether or not the dist_m() function is faster than computing the distances in serial depends on a number of factors including the number of trees, the number of tips, the complexity of the distance metric and the number of availible cores. In general, this function is recommended for computing distances between > 1000 trees. The ideal number of slices is difficult to determine. A greater number of slices decreases redundancy but increases the number of serial operations. In general, I recommend setting slices to 3. 
 #' @examples
 #' ## simulate two groups of trees
 #' t1 <- rtree(40)
@@ -1210,7 +1211,7 @@ sim.g.tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL
 #' ## Set number of cores for parallel processes
 #' registerDoMC(cores = detectCores())
 #' ## Calculate tree distances
-#' tree_dists <- dist.m(trees, method = "RF", slices = 3, normalise = T)
+#' tree_dists <- dist_m(trees, method = "RF", slices = 3, normalise = T)
 #' ## Conduct PCA analysis on tree distances
 #' pca_res <- prcomp(tree_dists)
 #' ## Check proportion of variances of principal components
@@ -1225,7 +1226,7 @@ sim.g.tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL
 #' 
 #' @export 
 
-dist.m <- function(trees, method, slices = 3, normalise = F){
+dist_m <- function(trees, method, slices = 3, normalise = F){
 	if(normalise == T & method == "SPR"){
 		warning("SPR distance cannot be normalised.")
 	}
