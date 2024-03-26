@@ -19,6 +19,8 @@ This function coverts phylogenetic data in phyDat format to list format, equival
 Note that phyDat objects can be converted to matrix objects using the as.character() function.
 }
 \examples{
+install.packages("phangorn")
+library(phangorn)
 data("Laurasiatherian")
 x <- phyDat_to_list(Laurasiatherian)
 }

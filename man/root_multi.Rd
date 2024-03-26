@@ -22,5 +22,5 @@ see help for root_node(). This function assumes that tip labels are identical in
 }
 \examples{
 trees <- rmtree(100, 10)
-trees2 <- root.multi(trees, 2)
+trees2 <- root_multi(trees, 2)
 }

@@ -16,6 +16,6 @@ a tree object of class 'phylo'.
 Function to generate a perfectly symmetrical (balanced) tree with equal edge lengths and a height of 1.
 }
 \examples{
-t <- make.sym.tree(64)
+t <- make_sym_tree(64)
 plot(t, show.tip.label = F)
 }

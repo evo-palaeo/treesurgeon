@@ -4,9 +4,10 @@ Title: treesurgeon: Tools and utilities for phylogenetic analyses in R
 Version: 0.1.0
 Author: Joseph N. Keating
 Maintainer: The package maintainer <joe.keating@bristol.ac.uk>
-Description: More about what it does (maybe more than one line) TO DO!
+Description: Tools and timesavers for tinkering with phylogenetic trees and data in R. TO DO!
     Use four spaces when indenting paragraphs within the Description.
 License: What license is it under? TO DO!
 Encoding: UTF-8
+Imports: phangorn, phytools, TreeTools, stringr, TreeDist, doMC, foreach, Quartet
 LazyData: true
 RoxygenNote: 7.3.1

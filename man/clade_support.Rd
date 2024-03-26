@@ -14,7 +14,7 @@ clade_support(trees, con, digits = 2)
 \item{digits}{integer indicating the number of decimal places to round to.}
 }
 \value{
-A tree object of class 'phylo' with node labels equivalent to clade_support.
+A tree object of class 'phylo' with node labels equivalent to clade support.
 }
 \description{
 Function to calculate support values for a specific tree (e.g. a consensus tree, maximum clade credibility tree, maximum likelihood tree etc.) given a sample of trees (e.g. posterior trees, bootstrap replicate trees, most parsimonious trees).
