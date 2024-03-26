@@ -23,11 +23,12 @@ This function can be used to combine seperate lists of phylogenetic characters w
 \examples{
 data(Lavoue2016)
 combined_data <- cat_data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
-## Vissualise data 
-if (!require("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-
+## Visualise 
+if(!require("BiocManager", quietly = TRUE)){
+	install.packages("BiocManager")
+}
 BiocManager::install("ComplexHeatmap")
+library(ComplexHeatmap)
 df <- t(as.data.frame(combined_data))
 df[df == "?"] <- NA
 df[df == "-"] <- NA

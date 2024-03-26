@@ -49,11 +49,12 @@ library(Quartet)
 #' @examples
 #' data(Lavoue2016)
 #' combined_data <- cat_data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
-#' ## Vissualise data 
-#' if (!require("BiocManager", quietly = TRUE))
-#'     install.packages("BiocManager")
-#' 
+#' ## Visualise 
+#' if(!require("BiocManager", quietly = TRUE)){
+#' 	install.packages("BiocManager")
+#' }
 #' BiocManager::install("ComplexHeatmap")
+#' library(ComplexHeatmap)
 #' df <- t(as.data.frame(combined_data))
 #' df[df == "?"] <- NA
 #' df[df == "-"] <- NA
@@ -864,11 +865,12 @@ gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 #' @examples
 #' data(Lavoue2016)
 #' combined_data <- cat_data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
-#' ## Vissualise data 
-#' if (!require("BiocManager", quietly = TRUE))
-#'     install.packages("BiocManager")
-#' 
+#' ## Visualise 
+#' if(!require("BiocManager", quietly = TRUE)){
+#' 	install.packages("BiocManager")
+#' }
 #' BiocManager::install("ComplexHeatmap")
+#' library(ComplexHeatmap)
 #' df <- t(as.data.frame(combined_data))
 #' df[df == "?"] <- NA
 #' df[df == "-"] <- NA
