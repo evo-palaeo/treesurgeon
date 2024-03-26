@@ -9,5 +9,5 @@ The development version of treesurgeon is available on [Github](https://github.c
 
 ```
 install.packages("devtools")
-devtools::install_github("evo-palaeo/treesurgeon)
+devtools::install_github("evo-palaeo/treesurgeon")
 ```
