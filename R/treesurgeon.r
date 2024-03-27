@@ -62,7 +62,6 @@
 #' Read nexus data file. 
 #'
 #' This function is a modification of the ape function read.nexus.data(). The function has been modified so that it can read MrBayes files with partitions comprising different data types (e.g. datatype=mixed). 
-#' @importFrom ape read.nexus.data
 #' @param file a file name specified by either a variable of mode character, or a double-quoted string.
 #' @param use.part.info logical. If true, matrices of different data types will be stored separately. If true, all data types will be concatenated. 
 #' @return a list of length t, where t is the number of taxa. Each element of the list is a character vector of length c, where c is the number of phylogenetic characters.  
@@ -279,7 +278,6 @@ read_nexdat <- function (file, use.part.info = F)
 #' Convert phyDat_to_list.
 #'
 #' This function coverts phylogenetic data in phyDat format to list format, equivalent to the output of read.nexus.data() or read.nexdat(). 
-#' @importFrom phangorn phyDat
 #' @param x an object of class 'phyDat'.
 #' @return a list of length t, where t is the number of taxa. Each element of the list is a character vector of length c, where c is the number of phylogenetic characters.  
 #' @details Note that phyDat objects can be converted to matrix objects using the as.character() function.  
@@ -348,8 +346,6 @@ u_edge_lengths <- function(tree){
 #' Calculate support values for a specific tree given a sample of trees
 #'
 #' Function to calculate support values for a specific tree (e.g. a consensus tree, maximum clade credibility tree, maximum likelihood tree etc.) given a sample of trees (e.g. posterior trees, bootstrap replicate trees, most parsimonious trees).
-#' @importFrom ape rtree plot.phylo nodelabels is.rooted prop.clades
-#' @importFrom phangorn rSPR
 #' @param trees a tree object of class 'multiPhylo'.
 #' @param con a tree object of class 'phylo'.
 #' @param digits integer indicating the number of decimal places to round to.
@@ -377,9 +373,6 @@ clade_support <- function(trees, con, digits = 2){
 #' Root a tree below a user-specified node.
 #'
 #' Function to root a tree at the midpoint of the branch ancestral to the user-specified node. 
-#' @importFrom ape rtree plot.phylo is.rooted tiplabels Nnode Ntip
-#' @importFrom phangorn mrca.phylo
-#' @importFrom phytools reroot
 #' @usage root_node(tree, node)
 #' @param tree a tree object of class 'phylo'.
 #' @param node number of the node or tip descending from the target branch in tree$edge. Alternatively, the user can specify a numeric vector of node/tip numbers, in which case the function will attempt to root the tree on the edge descending from the most recent common ancestor of the specified nodes/tips.
@@ -427,9 +420,6 @@ root_node <- function(tree, node){
 #' Root multiple trees below a user-specified node.
 #'
 #' Function to root all trees in a multiPhylo object at the midpoint of a branch ancestral to a user-specified node. 
-#' @importFrom ape rmtree plot.phylo .compressTipLabel
-#' @importFrom phangorn mrca.phylo
-#' @importFrom phytools reroot
 #' @usage root_node(trees, node)
 #' @param trees a tree object of class 'multiPhylo'.
 #' @param node number of the node or tip descending from the target branch in tree$edge. Alternatively, the user can specify a numeric vector of node/tip numbers, in which case the function will attempt to root the tree on the edge descending from the most recent common ancestor of the specified nodes/tips.
@@ -456,10 +446,6 @@ root_multi <- function(trees, node){
 #' Collapse nodes below a threshold value using node labels.
 #'
 #' Function to collapse all nodes of a phylo object with numeric node labels that are less than user-specified threshold value. 
-#' @importFrom ape rtree plot.phylo nodelabels multi2di
-#' @importFrom phangorn rSPR maxCladeCred
-#' @importFrom phytools reroot
-#' @importFrom TreeTools CollapseNode
 #' @param tree a tree object of class 'phylo'.
 #' @param threshold a numeric value. All nodes with a numeric node.label less than the threshold will be collapsed. 
 #' @return a tree object of class 'phylo'.
@@ -508,8 +494,6 @@ collapse_thresh <- function(tree, threshold){
 #' Make perfectly symmetrical tree.
 #'
 #' Function to generate a perfectly symmetrical (balanced) tree with equal edge lengths and a height of 1. 
-#' @importFrom ape plot.phylo
-#' @importFrom phytools read.newick
 #' @param n number of tips to generate. Must be in the geometric sequence: a1=2, r=2 (e.g. 2, 4, 8, 16, 32...).
 #' @return a tree object of class 'phylo'.
 #' @examples
@@ -545,8 +529,6 @@ make_sym_tree <- function(n = 32){
 #' Make perfectly asymmetrical tree.
 #'
 #' Function to generate a perfectly asymmetrical (unbalanced) tree with equal edge lengths and a height of 1. 
-#' @importFrom ape plot.phylo
-#' @importFrom phytools read.newick
 #' @param n number of tips to generate.
 #' @return a tree object of class 'phylo'.
 #' @examples
@@ -574,8 +556,6 @@ return(tree)
 #' Get tip priors.
 #'
 #' Function to extract tip priors for ancestral state estimation from a character vector, list or data.frame. 
-#' @importFrom ape plot.phylo
-#' @importFrom phytools ancr fitMk plot.ancr 
 #' @param morph a character vector, list or data.frame coded in 'standard' format (e.g. morphological data).
 #' @param extar_state logical. If TRUE, inapplicable codings ('-') will be treated as an additional state.
 #' @return A 'list' of numeric matrices of length n, where n is equal to the number of characters included in the input. Each matrix is size i * j, where i is the number of taxa and j is the number of states included in the nth character. Each cell represents the likelihood of observing state j in taxon i.  
@@ -673,8 +653,6 @@ get_tip_priors <- function(morph, extra_state = F){
 #' Get a contrast matrix.
 #'
 #' Function to automatically extract a contrast matrix from a character vector, list or data.frame of standard categorical data (e.g. morphological data).
-#' @importFrom ape plot.phylo consensus ladderize
-#' @importFrom phangorn phyDat
 #' @param morph a character vector, list or data.frame coded in 'standard' format (e.g. morphological data).
 #' @return A contrast matrix used by the phangorn function phyDat() to interpret standard categorical data. 
 #' @details This function extracts a contrast matrix from categorical characters, coded in 'standard' format (e.g. '0', '1', '2', '-', '?', '0/1'). The contrast matrix is used by the phangorn phyDat() function in order to interpret symbols denoting character state ambiguity (e.g. polymorphism, missing data etc.). Data in phyDat format can be used to estimate phylogeny in R (e.g. phangorn::parsimony(), TreeSearch::MaximizeParsimony()).  
@@ -932,8 +910,6 @@ cat_data <- function(..., use.part.info = F){
 #' Calculate shared bipartitions between trees.
 #'
 #' Function to calculate the number of shared bipartitions between a reference tree and a single or multiple comparsion tree(s). 
-#' @importFrom ape unroot rtree Nnode
-#' @importFrom phangorn RF.dist rSPR
 #' @param tree1 an object of class 'phylo'.
 #' @param tree2 an object of class 'phylo' or 'multiPhylo'.
 #' @details This is a symmetric measure and is closely related to the Robinson-Foulds distance. 
@@ -956,8 +932,6 @@ SB <- function(tree1, tree2){
 #' Calculate unique bipartitions in a tree.
 #'
 #' Function to calculate the number of bipartitions in a reference tree, that are not found in a comparsion tree.  
-#' @importFrom ape unroot rtree Nnode
-#' @importFrom phangorn RF.dist rSPR
 #' @param tree1 an object of class 'phylo'.
 #' @param tree2 an object of class 'phylo'.
 #' @details This is an asymmetric measure and is closely related to the Robinson-Foulds distance. UB(tree1, tree2) + UB(tree2, tree1) = RF.dist. 
@@ -1026,8 +1000,6 @@ total_garbage <- function(tip_states){
 #' Calculate AIC, AICc and BIC
 #' 
 #' Function to calculate the AIC, AICc and BIC of a model. 
-#' @importFrom ape rtree 
-#' @importFrom phytools sim.history fitMk
 #' @param loglik numeric. The log likelihood of the model. 
 #' @param k numeric. The number of free parameters of the model. 
 #' @param n numeric. The sample size (i.e. the number of observations). 
@@ -1061,8 +1033,6 @@ get_info <- function(loglik, k, n){
 #' Compare models using model weights
 #'
 #' Function to compare models based on AIC, AICc or BIC weights. 
-#' @importFrom ape rtree 
-#' @importFrom phytools sim.history fitMk
 #' @param loglik numeric. A numeric vector comprising log likelihoods of competing model. 
 #' @param k a numeric vector comprising the number of parameters of competing model. 
 #' @param n a numeric vector comprising the number of samples of competing model.
@@ -1105,7 +1075,6 @@ comp_models <- function(loglik, k, n, method = "AIC", m.names = NULL){
 #' Simulate a tree under Gause's law
 #'
 #' Function to simulate a tree under the assumption of competitive exclusion (Gause's law). 
-#' @importFrom ape read.tree
 #' @param b a numeric value between 0 and 1. The probability of speciation per extant lineage per generation.
 #' @param n numeric. The desired number of species to simulate. 
 #' @param t numeric. The desired number of generations to simulate. 
@@ -1219,14 +1188,6 @@ sim_g_tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL
 #' Calculate tree to tree distances in parallel
 #'
 #' Function to calculate tree to tree distances in parallel using the foreach package. 
-#' @importFrom ape rtree multi2di
-#' @importFrom phangorn rSPR SPR.dist RF.dist
-#' @importFrom doMC registerDoMC 
-#' @importFrom iterators iter
-#' @importFrom Quartet QuartetStatus
-#' @importFrom TreeDist ClusteringInfoDist MatchingSplitInfoDistance
-#' @importFrom foreach foreach %dopar% 
-#' @importFrom parallel detectCores 
 #' @param trees an object of class 'multiPhylo'.
 #' @param method character specifying the distance metric. Can be "RF", "quartet", "CID", "MSID" or "SPR".
 #' @param slices numeric. Number of sub matrices to compute

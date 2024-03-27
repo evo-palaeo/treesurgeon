@@ -8,6 +8,21 @@ Description: Tools and timesavers for tinkering with phylogenetic trees and data
     Use four spaces when indenting paragraphs within the Description.
 License: What license is it under? TO DO!
 Encoding: UTF-8
-Imports: phangorn, phytools, TreeTools, stringr, TreeDist, doMC, foreach, Quartet, ape, iterators
+Imports: 
+    phangorn,
+    phytools,
+    TreeTools,
+    stringr,
+    TreeDist,
+    doMC,
+    foreach,
+    Quartet,
+    ape,
+    iterators,
+    glue,
+    parallel
 LazyData: true
 RoxygenNote: 7.3.1
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
