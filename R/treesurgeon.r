@@ -485,7 +485,7 @@ collapse_thresh <- function(tree, threshold){
 		stop("node.label length does not equal the number of tree nodes!")
 	}
 	nl <- tree$node.label[which(tree$node.label >= threshold)]
-	tree <- CollapseNode(tree, nodes =  which(tree$node.label < threshold) + Ntip(tree))
+	tree <- TreeTools::CollapseNode(tree, nodes =  which(tree$node.label < threshold) + Ntip(tree))
 	tree$node.label <- nl
 	return(tree)
 }
@@ -1193,7 +1193,7 @@ sim_g_tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL
 #' @param slices numeric. Number of sub matrices to compute
 #' @param normalise logical. If T, distance metric is normalised.  
 #' @return A square matrix of tree to tree distances. 
-#' @details This function uses the foreach package to calculate tree to tree distances in parallel. Foreach allows for parallel computation of matrices, however tree to tree distance matrices are symmetrical, thus simply using foreach to calculate each cell of the matrix would result in 50 percent redundancy. To lower the amount of redundancy, the function splits the square matrix into a user specifed number of rectangular matrices (using the argument 'slices'). These are dealt with in serial, but each bvalue of the rectangular matrices is computed in parallel. For example, if length(trees) == 99, and slices == 3, the function will split the calculation into three submatrices x[1:33, 1:99], x[34:66, 34:99] and x[67:99, 67:99]. This lowers the redundancy from 50 percent to less than 25 percent. In theory, tree distance matrices can be computed without any redundancy, for example using the future.apply package. However, in practice, I have found this to be nowhere near as fast. Whether or not the dist_m() function is faster than computing the distances in serial depends on a number of factors including the number of trees, the number of tips, the complexity of the distance metric and the number of availible cores. In general, this function is recommended for computing distances between > 1000 trees. The ideal number of slices is difficult to determine. A greater number of slices decreases redundancy but increases the number of serial operations. In general, I recommend setting slices to 3. 
+#' @details This function uses the foreach package to calculate tree to tree distances in parallel. Foreach allows for parallel computation of matrices, however tree to tree distance matrices are symmetrical, thus simply using foreach to calculate each cell of the matrix would result in 50 percent redundancy. To lower the amount of redundancy, the function splits the square matrix into a user specifed number of rectangular matrices (using the argument 'slices'). These are dealt with in serial, but each bvalue of the rectangular matrices is computed in parallel. For example, if length(trees) == 99, and slices == 3, the function will split the calculation into three submatrices x[1:33, 1:99], x[34:66, 34:99] and x[67:99, 67:99]. This lowers the redundancy from 50 percent to less than 25 percent. In theory, tree distance matrices can be computed without any redundancy, for example using the future.apply package. However, in practice, I have found this to be nowhere near as fast. Whether or not the dist_m() function is faster than computing the distances in serial depends on a number of factors including the number of trees, the number of tips, the complexity of the distance metric and the number of availible cores. In general, this function is recommended for computing distances between > 1000 trees. The ideal number of slices is difficult to determine. A greater number of slices decreases redundancy but increases the number of serial operations. In general, I recommend setting slices to 3. Unfortunately, Windows does not support forking and thus this function will only work for Linux or Mac users.
 #' @examples
 #' ## simulate two groups of trees
 #' t1 <- rtree(40)
@@ -1209,7 +1209,7 @@ sim_g_tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL
 #' }
 #' trees <- c(trees1, trees2)
 #' ## Set number of cores for parallel processes
-#' registerDoMC(cores = detectCores())
+#' doMC::registerDoMC(cores = parallel::detectCores())
 #' ## Calculate tree distances
 #' tree_dists <- dist_m(trees, method = "RF", slices = 3, normalise = T)
 #' ## Conduct PCA analysis on tree distances
@@ -1241,13 +1241,13 @@ dist_m <- function(trees, method, slices = 3, normalise = F){
 	trees2 <- tail(trees, (length(trees) - 1))
 	dist_list <- list()
 	for(j in 1:slices){
-		dist_list[[j]] <- foreach(x = iter(tree_sets[[j]]), .combine = 'cbind') %dopar% {
+		dist_list[[j]] <- foreach(x = iter(tree_sets[[j]]), .combine = 'cbind')%dopar% {
 			x1 <- vapply( iter(trees2), function(y) {
 				if(method == "RF"){
 					return(RF.dist(x, y, normalize = normalise))
 				}
 				else if(method == "quartet"){
-    				Qstat <- QuartetStatus(x, y)
+    				Qstat <- Quartet::QuartetStatus(x, y)
     				Qdist <- 2*Qstat[[4]]
     				if(normalise == T){
     					Qdist <- Qdist/Qstat[[1]]
@@ -1255,10 +1255,10 @@ dist_m <- function(trees, method, slices = 3, normalise = F){
     				return(Qdist)
 				}
         		else if(method == "CID"){
-    				return(ClusteringInfoDist(x, y, normalize = normalise))
+    				return(TreeDist::ClusteringInfoDist(x, y, normalize = normalise))
 				}
         		else if(method == "MSID"){
-          			return(MatchingSplitInfoDistance(x, y, normalize = normalise))
+          			return(TreeDist::MatchingSplitInfoDistance(x, y, normalize = normalise))
         		}
 				else if(method == "SPR"){
 					return(SPR.dist(x, y))
