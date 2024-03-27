@@ -1,23 +1,24 @@
 Package: treesurgeon
 Type: Package
-Title: treesurgeon: Tools and utilities for phylogenetic analyses in R
+Title: treesurgeon
 Version: 0.1.0
 Author: Joseph N. Keating
 Maintainer: The package maintainer <joe.keating@bristol.ac.uk>
-Description: Tools and timesavers for tinkering with phylogenetic trees and data in R. TO DO!
+Description: Tools and timesavers for tinkering with phylogenetic trees and data in R.
     Use four spaces when indenting paragraphs within the Description.
-License: What license is it under? TO DO!
+License: CC0-1.0
 Encoding: UTF-8
-Imports: 
+Depends:
+    ape,
     phangorn,
-    phytools,
+    phytools
+Imports: 
     TreeTools,
     stringr,
     TreeDist,
     doMC,
     foreach,
     Quartet,
-    ape,
     iterators,
     glue,
     parallel
