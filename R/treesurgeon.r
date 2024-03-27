@@ -48,12 +48,18 @@
 #' BiocManager::install("ComplexHeatmap")
 #' library(ComplexHeatmap)
 #' df <- t(as.data.frame(combined_data))
+#' df <- tolower(df)
 #' df[df == "?"] <- NA
 #' df[df == "-"] <- NA
 #' df[df == "n"] <- NA
 #' states <- as.character(na.omit(unique(as.character(df))))
-#'cols <- sample(hcl.colors(n = length(states), "zissou 1"))
+#'cols <- rep("x", length(states))
 #'names(cols) <- states
+#'morph_states <- suppressWarnings(which(is.na(as.numeric(names(cols))) == F))
+#'mol_states <- which(names(cols) %in% c("a", "c", "g", "t"))
+#'cols[morph_states] <- hcl.colors(n = length(morph_states), palette = "Hawaii")
+#'cols[mol_states] <- hcl.colors(n = length(mol_states), palette = "zissou")
+#'cols[-c(mol_states, morph_states)] <- hcl.colors(n = length(cols[-c(mol_states, morph_states)]), palette = "Cividis")
 #'Heatmap(df[,1:1500], row_names_side = "left", col = cols, na_col = "white", name = "states")
 #' 
 "Lavoue2016"
@@ -868,12 +874,18 @@ gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 #' BiocManager::install("ComplexHeatmap")
 #' library(ComplexHeatmap)
 #' df <- t(as.data.frame(combined_data))
+#' df <- tolower(df)
 #' df[df == "?"] <- NA
 #' df[df == "-"] <- NA
 #' df[df == "n"] <- NA
 #' states <- as.character(na.omit(unique(as.character(df))))
-#'cols <- sample(hcl.colors(n = length(states), "zissou 1"))
+#'cols <- rep("x", length(states))
 #'names(cols) <- states
+#'morph_states <- suppressWarnings(which(is.na(as.numeric(names(cols))) == F))
+#'mol_states <- which(names(cols) %in% c("a", "c", "g", "t"))
+#'cols[morph_states] <- hcl.colors(n = length(morph_states), palette = "Hawaii")
+#'cols[mol_states] <- hcl.colors(n = length(mol_states), palette = "zissou")
+#'cols[-c(mol_states, morph_states)] <- hcl.colors(n = length(cols[-c(mol_states, morph_states)]), palette = "Cividis")
 #'Heatmap(df[,1:1500], row_names_side = "left", col = cols, na_col = "white", name = "states")
 #' 
 #' @export
