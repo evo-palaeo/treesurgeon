@@ -1411,26 +1411,28 @@ summary.nexdat <- function(x){
 #' @export 
 
 summary.multi_nexdat <- function(x){
-    names(x) <- tolower(names(x))
-    res <- list()
+    # check if object is class 'multi_nexdat'
     if(class(x) != "multi_nexdat"){
         warning("Object is not class multi_nexdat")
     }
-    # check if partitions have names.
 
+    #list to store results
+    res <- list()
+
+    # check if partitions have names.
     if(is.null(names(x))) {
         warning("partition names not included. Partitions should be named 'standard', 'dna' or 'protein'.")
+    } else {
+        names(x) <- tolower(names(x))
     }
 
     # check if partitions are names anything other than 'standard', 'dna' or 'protein'.
-
     Pnames <- length(setdiff(names(x), c("standard", "dna", "protein")))
     if(Pnames > 0){
         warning(paste(Pnames, "partition name(s) not recognised. Partitions should be named 'standard', 'dna' or 'protein'."), sep = "")
     }
 
     # summarise combined data
-
     comb_data <- remove_part_info(x)
     missing <- lapply(comb_data, function(z) which(z == "?"| z == "n" | z == "x"))
     gaps <- lapply(comb_data, function(z) which(z == "-"))
@@ -1447,7 +1449,6 @@ summary.multi_nexdat <- function(x){
     names(res)[[3]] <- "total"
 
     # summarise data partitions
-
     for(i in 1:length(x)){
         x[[i]] <- lapply(x[[i]], tolower)
         missing <- lapply(x[[i]], function(z) which(z == "?"| z == "n" | z == "x"))
