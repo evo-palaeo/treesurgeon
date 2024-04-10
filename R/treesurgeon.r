@@ -1,4 +1,5 @@
- 
+###################### treesurgeon v.0.2 ###################### 
+################### J. N. Keating, 06/04/24 ###################
 
 ################### Data ###################
 
@@ -40,7 +41,7 @@
 #' @references Lavoué, S., 2016. Was Gondwanan breakup the cause of the intercontinental distribution of Osteoglossiformes? A time-calibrated phylogenetic test combining molecular, morphological, and paleontological evidence. Molecular Phylogenetics and Evolution, 99, pp.34-43.
 #' @examples
 #' data(Lavoue2016)
-#' combined_data <- cat_data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
+#' combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F) 
 #' ## Visualise 
 #' if(!require("BiocManager", quietly = TRUE)){
 #' 	install.packages("BiocManager")
@@ -70,7 +71,7 @@
 #' This function is a modification of the ape function read.nexus.data(). The function has been modified so that it can read MrBayes files with partitions comprising different data types (e.g. datatype=mixed). 
 #' @param file a file name specified by either a variable of mode character, or a double-quoted string.
 #' @param use.part.info logical. If true, matrices of different data types will be stored separately. If true, all data types will be concatenated. 
-#' @return a list of length t, where t is the number of taxa. Each element of the list is a character vector of length c, where c is the number of phylogenetic characters.  
+#' @return a list object of class nexdat or multi_nexdat.  
 #' @details The read.nexus.data() function from ape has been modified so that it can read MrBayes mixed data files, either as a single matrix with data types concatenated or as a list of matrices organised by datatype. In addition to this change, the function has been modified so that it can handle spaces in polymorphic or uncertain characters (e.g. (0 1), {0 1}). Due to this change, the function no longer checks if there are spaces in taxon names. Please ensure that spaces in taxon names are removed prior to using this function as they will cause the data to be read incorrectly.   
 #' @examples
 #' ## Use read.nexdat to read a data file in NEXUS format into object x
@@ -140,7 +141,7 @@ read_nexdat <- function (file, use.part.info = F)
       part.info <- data.frame()
       x <- strsplit(gsub("[\\(\\)]", "", regmatches(x, gregexpr("\\(.*?\\)", x))[[1]]), ",")[[1]]
       for(i in 1:length(x)){
-        str_info <- str_extract_all(x[[i]], "\\b\\w+\\b")[[1]]
+        str_info <- stringr::str_extract_all(x[[i]], "\\b\\w+\\b")[[1]]
         newrow <- data.frame("partition" = tolower(str_info[[1]]), "start" = as.numeric(str_info[[2]]), "end" = as.numeric(str_info[[3]]))
         part.info <- rbind(part.info, newrow)
       }
@@ -273,34 +274,39 @@ read_nexdat <- function (file, use.part.info = F)
       Obj.info <- list()
       for(i in 1: nrow(p.info)){
         Obj.info[[i]] <- lapply(Obj, function(x) x[p.info[i,2]:p.info[i,3]])
+        class(Obj.info[[i]]) <- c("nexdat")
       }
       names(Obj.info) <- p.info[,1]
       Obj <- Obj.info
+      class(Obj) <- c("multi_nexdat")
+    } else {
+      class(Obj) <- c("nexdat")
     }
     Obj
 }
 
 
-#' Convert phyDat_to_list.
+#' Convert phyDat_to_nexdat.
 #'
 #' This function coverts phylogenetic data in phyDat format to list format, equivalent to the output of read.nexus.data() or read.nexdat(). 
 #' @param x an object of class 'phyDat'.
-#' @return a list of length t, where t is the number of taxa. Each element of the list is a character vector of length c, where c is the number of phylogenetic characters.  
+#' @return an object of class 'nexdat'. 
 #' @details Note that phyDat objects can be converted to matrix objects using the as.character() function.  
 #' @examples
 #' install.packages("phangorn")
 #' library(phangorn)
 #' data("Laurasiatherian")
-#' x <- phyDat_to_list(Laurasiatherian)
+#' x <- phyDat_to_nexdat(Laurasiatherian)
 #' @export
 
-phyDat_to_list<- function(x){
+phyDat_to_nexdat<- function(x){
 	if(class(x) != "phyDat"){
 		stop("data is not phyDat object!")
 	}
 	x.mat <-  as.character(x)
 	x.list <- lapply(1:nrow(x.mat), function(i) x.mat[i,])
 	names(x.list) <- rownames(x.mat)
+    class(x.list) <- c("nexdat")
 	return(x.list)
 }
 
@@ -857,16 +863,51 @@ gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 }
 
 
+
+#' remove partition information
+#'
+#' Function to remove partition information from a 'multi_nexdat' object.
+#' @param x a list object of subclass 'multi_nexdat'.
+#' @return A list object of subclass 'nexdat'.
+#' @details This function removes partition information from a 'multi_nexdat' object, thereby converting it into a 'nexdat' object. Sequences from seperate partitions are conctenated.  
+#' @examples
+#' data(Lavoue2016)
+#' partitioned_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = T)
+#' concatenated_data <- remove_part_info(partitioned_data)  
+#' 
+#' @export 
+
+
+remove_part_info <- function(x){
+    if(class(x) != "multi_nexdat"){
+        stop("Object is not a multi_nexdat!")
+    }
+    x2 <- list()
+    taxa <- sort(unique(unlist(lapply(x, names))))
+    for(j in taxa){
+        char <- character()
+        for(i in names(x)){
+            char <- c(char, x[[i]][[j]])
+        }
+        x2[[j]] <- char
+    }
+    class(x2) <- c("nexdat")
+    return(x2) 
+}
+
+
+
 #' Combine phylogenetic data
 #'
 #' Function to combine lists of phylogenetic data (e.g. those output by the ape function read.nexus.data()).  
 #' @param ... two or more objects of class 'list' comprising named vectors of phylogenetic characters. 
 #' @param use.part.info logical. If TRUE, the function resturns a seperate list for each input list. 
+#' @param part.names a character vector of partition names e.g. 'dna', 'standard', 'protein'. If not supplied, the function will attempt to guess the correct partition type. 
 #' @return A list, or multiple lists, of phylogenetic data of length T, where T equals the sum of unique taxa in the input lists.
 #' @details This function can be used to combine seperate lists of phylogenetic characters with non-overlapping taxa. If a taxon does not occur in all input lists, it will be coded as missing '?' for those input list(s). Can be used, for example, to combine molecular and morphological datasets with non-overlapping taxa. Note that taxa must be named identically in each input for the data to be combined succesfully.    
 #' @examples
 #' data(Lavoue2016)
-#' combined_data <- cat_data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
+#' combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F) 
 #' ## Visualise 
 #' if(!require("BiocManager", quietly = TRUE)){
 #' 	install.packages("BiocManager")
@@ -890,13 +931,32 @@ gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 #' 
 #' @export
 
-cat_data <- function(..., use.part.info = F){
+cat_data <- function(..., use.part.info = F, part.names = NULL){
 	partitions <- list(...)
-	names(partitions) <- sprintf("p%d", seq(length(partitions)))
 	taxa <- sort(unique(unlist(lapply(partitions, names))))
 	new_data <- list()
-	for(i in names(partitions)){
+	for(i in 1:length(partitions)){
+        partitions[[i]] <- lapply(partitions[[i]], tolower)
 		new_data[[i]] <- list()
+        # attempt to guess partition names
+
+        if(is.null(part.names)){
+            px <- unlist(partitions[[i]])
+            # remove missing data
+            px <- px[-which(px == "?"| px == "n" | px == "x" | px == "-")]
+            px_l <- length(px)
+            if(length(suppressWarnings(na.omit(as.numeric(px))))/px_l > 0.9){
+                names(new_data)[[i]] <- "standard"
+            } else if(length(px[which(px == "a" | px == "c" | px == "g" | px == "t" | px == "u")])/px_l > 0.9){
+                names(new_data)[[i]] <- "dna"
+                if(length(px[which(px == "u")]) > 0){
+                    names(new_data)[[i]] <- "rna"
+                }
+            } else {
+                names(new_data)[[i]] <- "protein"
+            }
+        }
+        names(partitions) <- tolower(part.names)
 		for(j in taxa){
 			if(is.null(partitions[[i]][[j]])){
 				new_data[[i]][[j]] <- rep("?", length(partitions[[i]][[1]]))
@@ -905,18 +965,11 @@ cat_data <- function(..., use.part.info = F){
 			}
 		}
 	}
-	if(use.part.info == F){
-		new_data2 <- list()
-		for(j in taxa){
-			char <- character()
-			for(i in names(new_data)){
-				char <- c(char, new_data[[i]][[j]])
-			}
-			new_data2[[j]] <- char
-		}
-		new_data <- new_data2
-	}
-	return(new_data)
+    class(new_data) <- c("multi_nexdat")
+    if(use.part.info == F){
+        new_data <- remove_part_info(new_data)  
+    }
+    return(new_data)
 }
 
 #' Calculate shared bipartitions between trees.
@@ -1303,7 +1356,123 @@ dist_m <- function(trees, method, slices = 3, normalise = F){
 
 
 
+#' summary.nexdat
+#'
+#' Function to sumarise an object of class 'nexdat'. 
+#' @param x an object of class 'nexdat'.
+#' @return An object of class 'summary.nexdat'.
+#' @details This function returns the proportion of missing characters and proportion of gaps per taxon.  
+#' @examples
+#' data(Lavoue2016) 
+#' summary(Lavoue2016$dna)
+summary.nexdat <- function(x){
+    names(x) <- tolower(names(x))
+    res <- list()
+    if(class(x) != "nexdat"){
+        warning("Object is not class nexdat")
+    }
+
+    # summarise combined data
+
+    x <- lapply(x, tolower)
+    comb_data <- x
+    missing <- lapply(comb_data, function(z) which(z == "?"| z == "n" | z == "x"))
+    gaps <- lapply(comb_data, function(z) which(z == "-"))
+    NCHAR <- NA
+    NTAX <- NA
+    res[[1]] <- c("Ntax" = length(comb_data), "Nchar" = length(comb_data[[1]])) 
+    res[[2]] <- as.matrix(data.frame("Ntax" = NTAX, "Nchar" = NCHAR))
+    names(res) <- c("data", "partitions")
+   
+    prop_missing <- unlist(lapply(missing, function(z) round(length(z)/res[[1]][[2]], 2)))
+    prop_gaps <- unlist(lapply(gaps, function(z) round(length(z)/res[[1]][[2]], 2)))
+    res[[3]] <- as.matrix(data.frame("missing" = prop_missing, "gaps" = prop_gaps))
+    names(res)[[3]] <- "total"
+    class(res) <- "summary.nexdat"
+    return(res)
+}
 
 
 
-		
+
+#' summary.multi_nexdat
+#'
+#' Function to sumarise an object of class 'multi_nexdat'. 
+#' @param x an object of class 'multi_nexdat'.
+#' @return An object of class 'summary.nexdat'.
+#' @details This function returns the proportion of missing characters and proportion of gaps per taxon. If partitions are specidied, the function also returns the proportion of missing data, gaps, ambiguous codings (e.g. polymorphic characters, characters that are coded as uncertain between two or more states) and unamibiguous characters per taxon per partition.  
+#' @examples
+#' data(Lavoue2016)
+#' summary(Lavoue2016)
+summary.multi_nexdat <- function(x){
+    names(x) <- tolower(names(x))
+    res <- list()
+    if(class(x) != "multi_nexdat"){
+        warning("Object is not class multi_nexdat")
+    }
+    # check if partitions have names.
+
+    if(is.null(names(x))) {
+        warning("partition names not included. Partitions should be named 'standard', 'dna' or 'protein'.")
+    }
+
+    # check if partitions are names anything other than 'standard', 'dna' or 'protein'.
+
+    Pnames <- length(setdiff(names(x), c("standard", "dna", "protein")))
+    if(Pnames > 0){
+        warning(paste(Pnames, "partition name(s) not recognised. Partitions should be named 'standard', 'dna' or 'protein'."), sep = "")
+    }
+
+    # summarise combined data
+
+    comb_data <- remove_part_info(x)
+    missing <- lapply(comb_data, function(z) which(z == "?"| z == "n" | z == "x"))
+    gaps <- lapply(comb_data, function(z) which(z == "-"))
+    NCHAR <- unlist(lapply(x, function(z) length(z[[1]])))
+    NTAX <- unlist(lapply(x, function(z) length(z)))
+
+    res[[1]] <- c("Ntax" = length(comb_data), "Nchar" = length(comb_data[[1]])) 
+    res[[2]] <- as.matrix(data.frame("Ntax" = NTAX, "Nchar" = NCHAR))
+    names(res) <- c("data", "partitions")
+   
+    prop_missing <- unlist(lapply(missing, function(z) round(length(z)/res[[1]][[2]], 2)))
+    prop_gaps <- unlist(lapply(gaps, function(z) round(length(z)/res[[1]][[2]], 2)))
+    res[[3]] <- as.matrix(data.frame("missing" = prop_missing, "gaps" = prop_gaps))
+    names(res)[[3]] <- "total"
+
+    # summarise data partitions
+
+    for(i in 1:length(x)){
+        x[[i]] <- lapply(x[[i]], tolower)
+        missing <- lapply(x[[i]], function(z) which(z == "?"| z == "n" | z == "x"))
+        gaps <- lapply(x[[i]], function(z) which(z == "-"))
+        if(names(x)[[i]] == "dna" | names(x)[[i]] == "rna"){
+            unam_chars <- lapply(x[[i]], function(z) which(z == "a" | z == "c" | z == "g" | z == "t" | z == "u"))
+            poly <- lapply(1:length(x[[i]]), function(z) (1:length(x[[i]][[z]]))[-c(missing[[z]], gaps[[z]], unam_chars[[z]])])
+            names(poly) <- names(unam_chars)
+        }
+        if(names(x)[[i]] == "standard"){
+            unam_chars <- lapply(x[[i]], function(z) which(is.na(suppressWarnings(as.numeric(z))) == F))
+            poly <- lapply(1:length(x[[i]]), function(z) (1:length(x[[i]][[z]]))[-c(missing[[z]], gaps[[z]], unam_chars[[z]])])
+            names(poly) <- names(unam_chars)
+        }
+        if(names(x)[[i]] == "protein"){
+            poly <- lapply(1:length(x[[i]]), function(z) which(z == "b" | z == "z" | z == "j" | z == "u" ))
+            unam_chars <- lapply(1:length(x[[i]]), function(z) (1:length(x[[i]][[z]]))[-c(missing[[z]], gaps[[z]], poly[[z]])])
+        }
+        part_Nchar <- length(x[[i]][[1]])
+        prop_missing <- unlist(lapply(missing, function(z) round(length(z)/part_Nchar, 2)))
+        prop_gaps <- unlist(lapply(gaps, function(z) round(length(z)/part_Nchar, 2)))
+        prop_poly <- unlist(lapply(poly, function(z) round(length(z)/part_Nchar, 2)))
+        prop_unam <- unlist(lapply(unam_chars, function(z) round(length(z)/part_Nchar, 2)))
+
+        res[[i + 3]] <- as.matrix(data.frame(missing = prop_missing, gaps = prop_gaps, ambiguous = prop_poly, unambiguous = prop_unam))
+        names(res)[[i + 3]] <- names(x)[[i]]
+    }
+    class(res) <- "summary.nexdat"
+    return(res)
+}
+
+
+
+

@@ -14,5 +14,6 @@
 #' @importFrom TreeDist ClusteringInfoDist
 #' @importFrom TreeDist MatchingSplitInfoDistance
 #' @importFrom TreeTools CollapseNode
+#' @importFrom stringr str_extract_all
 ## usethis namespace: end
 NULL

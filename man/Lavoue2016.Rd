@@ -15,7 +15,7 @@ A list comprising morphological and molecular data partitions which make up the 
 }
 \examples{
 data(Lavoue2016)
-combined_data <- cat_data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
+combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F) 
 ## Visualise 
 if(!require("BiocManager", quietly = TRUE)){
 	install.packages("BiocManager")

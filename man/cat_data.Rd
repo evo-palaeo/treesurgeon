@@ -4,12 +4,14 @@
 \alias{cat_data}
 \title{Combine phylogenetic data}
 \usage{
-cat_data(..., use.part.info = F)
+cat_data(..., use.part.info = F, part.names = NULL)
 }
 \arguments{
 \item{...}{two or more objects of class 'list' comprising named vectors of phylogenetic characters.}
 
 \item{use.part.info}{logical. If TRUE, the function resturns a seperate list for each input list.}
+
+\item{part.names}{a character vector of partition names e.g. 'dna', 'standard', 'protein'. If not supplied, the function will attempt to guess the correct partition type.}
 }
 \value{
 A list, or multiple lists, of phylogenetic data of length T, where T equals the sum of unique taxa in the input lists.
@@ -22,7 +24,7 @@ This function can be used to combine seperate lists of phylogenetic characters w
 }
 \examples{
 data(Lavoue2016)
-combined_data <- cat_data(Lavoue2016$morph, Lavoue2016$mol, use.part.info = F) 
+combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F) 
 ## Visualise 
 if(!require("BiocManager", quietly = TRUE)){
 	install.packages("BiocManager")

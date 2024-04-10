@@ -12,7 +12,7 @@ read_nexdat(file, use.part.info = F)
 \item{use.part.info}{logical. If true, matrices of different data types will be stored separately. If true, all data types will be concatenated.}
 }
 \value{
-a list of length t, where t is the number of taxa. Each element of the list is a character vector of length c, where c is the number of phylogenetic characters.
+a list object of class nexdat or multi_nexdat.
 }
 \description{
 This function is a modification of the ape function read.nexus.data(). The function has been modified so that it can read MrBayes files with partitions comprising different data types (e.g. datatype=mixed).
