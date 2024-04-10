@@ -1,4 +1,4 @@
-# treesurgeon
+# treesurgeon v 0.2
 Tools and timesavers for tinkering with phylogenetic trees and data in R. 
 
 - Author: Joseph Keating
