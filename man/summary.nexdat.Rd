@@ -21,4 +21,5 @@ This function returns the proportion of missing characters and proportion of gap
 \examples{
 data(Lavoue2016) 
 summary(Lavoue2016$dna)
+
 }

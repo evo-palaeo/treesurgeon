@@ -1365,6 +1365,9 @@ dist_m <- function(trees, method, slices = 3, normalise = F){
 #' @examples
 #' data(Lavoue2016) 
 #' summary(Lavoue2016$dna)
+#' 
+#' @export 
+
 summary.nexdat <- function(x){
     names(x) <- tolower(names(x))
     res <- list()
@@ -1404,6 +1407,9 @@ summary.nexdat <- function(x){
 #' @examples
 #' data(Lavoue2016)
 #' summary(Lavoue2016)
+#' 
+#' @export 
+
 summary.multi_nexdat <- function(x){
     names(x) <- tolower(names(x))
     res <- list()
