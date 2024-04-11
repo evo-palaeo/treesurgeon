@@ -7,10 +7,10 @@
 remove_part_info(x)
 }
 \arguments{
-\item{x}{a list object of subclass 'multi_nexdat'.}
+\item{x}{an object of class 'multi_nexdat'.}
 }
 \value{
-A list object of subclass 'nexdat'.
+an object of class 'nexdat'.
 }
 \description{
 Function to remove partition information from a 'multi_nexdat' object.

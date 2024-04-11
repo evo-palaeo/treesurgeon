@@ -274,13 +274,13 @@ read_nexdat <- function (file, use.part.info = F)
       Obj.info <- list()
       for(i in 1: nrow(p.info)){
         Obj.info[[i]] <- lapply(Obj, function(x) x[p.info[i,2]:p.info[i,3]])
-        class(Obj.info[[i]]) <- c("nexdat")
+        class(Obj.info[[i]]) <- c("nexdat", "list")
       }
       names(Obj.info) <- p.info[,1]
       Obj <- Obj.info
-      class(Obj) <- c("multi_nexdat")
+      class(Obj) <- c("multi_nexdat", "list")
     } else {
-      class(Obj) <- c("nexdat")
+      class(Obj) <- c("nexdat", "list")
     }
     Obj
 }
@@ -306,7 +306,7 @@ phyDat_to_nexdat<- function(x){
 	x.mat <-  as.character(x)
 	x.list <- lapply(1:nrow(x.mat), function(i) x.mat[i,])
 	names(x.list) <- rownames(x.mat)
-    class(x.list) <- c("nexdat")
+    class(x.list) <- c("nexdat", "list")
 	return(x.list)
 }
 
@@ -867,8 +867,8 @@ gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 #' remove partition information
 #'
 #' Function to remove partition information from a 'multi_nexdat' object.
-#' @param x a list object of subclass 'multi_nexdat'.
-#' @return A list object of subclass 'nexdat'.
+#' @param x an object of class 'multi_nexdat'.
+#' @return an object of class 'nexdat'.
 #' @details This function removes partition information from a 'multi_nexdat' object, thereby converting it into a 'nexdat' object. Sequences from seperate partitions are conctenated.  
 #' @examples
 #' data(Lavoue2016)
@@ -879,7 +879,7 @@ gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 
 
 remove_part_info <- function(x){
-    if(class(x) != "multi_nexdat"){
+    if(any(class(x) == "multi_nexdat") == F){
         stop("Object is not a multi_nexdat!")
     }
     x2 <- list()
@@ -891,7 +891,7 @@ remove_part_info <- function(x){
         }
         x2[[j]] <- char
     }
-    class(x2) <- c("nexdat")
+    class(x2) <- c("nexdat", "list")
     return(x2) 
 }
 
@@ -965,7 +965,7 @@ cat_data <- function(..., use.part.info = F, part.names = NULL){
 			}
 		}
 	}
-    class(new_data) <- c("multi_nexdat")
+    class(new_data) <- c("multi_nexdat", "list")
     if(use.part.info == F){
         new_data <- remove_part_info(new_data)  
     }
@@ -1371,7 +1371,7 @@ dist_m <- function(trees, method, slices = 3, normalise = F){
 summary.nexdat <- function(x){
     names(x) <- tolower(names(x))
     res <- list()
-    if(class(x) != "nexdat"){
+    if(any(class(x) == "nexdat") == F){
         warning("Object is not class nexdat")
     }
 
@@ -1391,7 +1391,7 @@ summary.nexdat <- function(x){
     prop_gaps <- unlist(lapply(gaps, function(z) round(length(z)/res[[1]][[2]], 2)))
     res[[3]] <- as.matrix(data.frame("missing" = prop_missing, "gaps" = prop_gaps))
     names(res)[[3]] <- "total"
-    class(res) <- "summary.nexdat"
+    class(res) <- "summary_nexdat"
     return(res)
 }
 
@@ -1412,7 +1412,7 @@ summary.nexdat <- function(x){
 
 summary.multi_nexdat <- function(x){
     # check if object is class 'multi_nexdat'
-    if(class(x) != "multi_nexdat"){
+    if(any(class(x) == "multi_nexdat") == F){
         warning("Object is not class multi_nexdat")
     }
 
@@ -1421,7 +1421,7 @@ summary.multi_nexdat <- function(x){
 
     # check if partitions have names.
     if(is.null(names(x))) {
-        warning("partition names not included. Partitions should be named 'standard', 'dna' or 'protein'.")
+        stop("partition names not included. Partitions should be named 'standard', 'dna' or 'protein'!")
     } else {
         names(x) <- tolower(names(x))
     }
@@ -1476,7 +1476,7 @@ summary.multi_nexdat <- function(x){
         res[[i + 3]] <- as.matrix(data.frame(missing = prop_missing, gaps = prop_gaps, ambiguous = prop_poly, unambiguous = prop_unam))
         names(res)[[i + 3]] <- names(x)[[i]]
     }
-    class(res) <- "summary.nexdat"
+    class(res) <- "summary_nexdat"
     return(res)
 }
 
