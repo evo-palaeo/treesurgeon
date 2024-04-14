@@ -662,6 +662,54 @@ get_tip_priors <- function(morph, extra_state = F){
 	return(results)
 }
 
+#' Amalgamate tip priors.
+#'
+#' Function to amalgamate tip priors for ancestral state estimation. 
+#' @param tp_1 an object of class 'data.frame' compising the tip priors of the controlling character.
+#' @param tp_2 an object of class 'data.frame' compising the tip priors of the dependent character.
+#' @return An object of class 'data.frame' compising the amalgamated tip priors of the controlling and dependent character. 
+#' @details This function amalgamates two seperate sets of tip priors, corresponding to the controlling and dependent character respectively, into a single set of tip priors corresponding to a Structured Markov Model (SMM) equipped with hidden states (see Tarasov 2019).
+#' @references Tarasov, S., 2019. Integration of anatomy ontologies and evo-devo using structured Markov models suggests a new framework for modeling discrete phenotypic traits. Systematic biology, 68(5), pp.698-716.
+#' @examples
+#' ## Load data
+#' data(vert_data)
+#' head(vert_data$morph)
+#' tp <- get_tip_priors(vert_data$morph, extra_state = F)
+#' tp_SMM <- amal_tip_priors(tp[[1]], tp[[2]])
+#' colnames(tp_SMM) <- c("aA", "aP", "pA", "pP")
+#' ## Get SMM using rphenoscate
+#' devtools::install_github("uyedaj/rphenoscate")
+#' library(rphenoscate)
+#' c1 <- matrix(c(-1, 1, 1, -1), 2, 2, byrow = TRUE, dimnames =list( c("a", "p"), c("a", "p")) )
+#' c2 <-matrix(c(-2, 2, 2, -2), 2, 2, byrow = TRUE, dimnames =list( c("A", "P"), c("A", "P")) )
+#' SMM_ind <- amaSMM_2Q(c1, c2, controlling.state = NULL, diag.as = 0)
+#' ## conduct ancestral state analysis using phytools and plot.
+#' fitSMM <- fitMk(tree = vert_data, x = tp_SMM, model = SMM_ind)
+#' ancSMM <- ancr(fitSMM)
+#' plot(ancSMM, legend = "topleft")
+#' ## Collapse hidden states to observed states and plot
+#' ancSMM$ace <- as.matrix(data.frame("bone absent" = ancSMM$ace[,1] + ancSMM$ace[,2], "secondary osteons absent" = ancSMM$ace[,3], "secondary osteons present" = ancSMM$ace[,4]))
+#' attributes(ancSMM)$data <- as.matrix(data.frame("bone absent" = tp_SMM[,1] + tp_SMM[,2], "secondary osteons absent" = tp_SMM[,3], "secondary osteons present" = tp_SMM[,4]))
+#' plot(ancSMM, legend = "topleft")
+#' @export
+
+amal_tip_priors <- function(tp_1, tp_2){
+	if(all(rownames(tp_1) != rownames(tp_2))){
+    	stop("rownames for tp_1 and tp_2 differ!")
+	}
+    result <- matrix(0, nrow(tp_1), ncol(tp_1) * ncol(tp_2))
+    col_n <- 1
+    c_names <- character()
+    for(i in 1:ncol(tp_1)){
+        result[, col_n:(col_n -1 + ncol(tp_2))] <- tp_1[,i] * tp_2
+        c_names <- c(c_names, paste(i, 1:ncol(tp_2), sep = ""))
+        col_n <- col_n + ncol(tp_2)
+    }
+    colnames(result) <- c_names
+	rownames(result) <- rownames(tp_1)
+    return(result)
+}
+
 #' Get a contrast matrix.
 #'
 #' Function to automatically extract a contrast matrix from a character vector, list or data.frame of standard categorical data (e.g. morphological data).
