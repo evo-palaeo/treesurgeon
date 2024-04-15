@@ -26,6 +26,28 @@
 #' head(vert_data$morph)
 "vert_data"
 
+
+#' Dinosaur-bird integument data
+#'
+#' Phylogeny and associated integument character data modified from Cockx et al (2024, in prep). 
+#'
+#' @docType data
+#'
+#' @usage data(dino_data)
+#'
+#' @format time tree of class 'phylo' representing the relationships of the 96 archosaur taxa (predominantly theropods). Integument character data ('morph') is included as an object of class 'data.frame'. Character state decriptions ('state_labels') for each of the three integument characters are included as a list.
+#'
+#' @keywords datasets
+#'
+#' @references Cockx et al (2024, in prep)
+#' 
+#' @examples
+#' data(dino_data)
+#' plot(dino_data, cex = 0.5, no.margin = T)
+#' head(dino_data$morph)
+"dino_data"
+
+
 #' Total-evidence dataset from Lavoue (2016).
 #'
 #' A list comprising morphological and molecular data partitions which make up the total-evidence phylogenetic dataset of Osteoglossiformes from Lavoue (2016). 
@@ -911,7 +933,6 @@ gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 }
 
 
-
 #' remove partition information
 #'
 #' Function to remove partition information from a 'multi_nexdat' object.
@@ -942,7 +963,6 @@ remove_part_info <- function(x){
     class(x2) <- c("nexdat", "list")
     return(x2) 
 }
-
 
 
 #' Combine phylogenetic data
@@ -1020,6 +1040,7 @@ cat_data <- function(..., use.part.info = F, part.names = NULL){
     return(new_data)
 }
 
+
 #' Calculate shared bipartitions between trees.
 #'
 #' Function to calculate the number of shared bipartitions between a reference tree and a single or multiple comparsion tree(s). 
@@ -1039,7 +1060,8 @@ SB <- function(tree1, tree2){
 	tree2 <- unroot(tree2)
 	RF <- RF.dist(tree1, tree2)
 	part_all <- (Nnode(tree1) -1) + (Nnode(tree2) -1)
-	return((part_all - RF)/2)}
+	return((part_all - RF)/2)
+}
 
 
 #' Calculate unique bipartitions in a tree.
@@ -1064,7 +1086,8 @@ UB <- function(tree1, tree2){
 	part2 <- (Nnode(tree2) -1)
 	part_all <- (Nnode(tree1) -1) + (Nnode(tree2) -1)
 	SB <- ((part_all - RF)/2)
-	return(part1 - SB)}
+	return(part1 - SB)
+}
 
 
 #' Calculate the likelihood of the 'total_garbage' model
