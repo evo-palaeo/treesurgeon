@@ -772,7 +772,7 @@ get_contrast <- function(morph){
 	for(i in 1:length(u.states)){
 		state_i <- u.states[[i]]
 		if(is.na(suppressWarnings(as.numeric(state_i)))){
-			if(state_i == "?"|| state_i == "-"){
+			if(state_i == "?"| state_i == "-"){
 				uncertain <- c(uncertain, i)
 			} else if(grepl("/", state_i, fixed = TRUE)){
 				states[[i]] <- as.numeric(unlist(strsplit(state_i, "/"))) + 1
