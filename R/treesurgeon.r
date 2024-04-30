@@ -1208,6 +1208,7 @@ comp_models <- function(loglik, k, n, method = "AIC", m.names = NULL){
   return(results)
 }
 
+
 #' Simulate a tree under Gause's law
 #'
 #' Function to simulate a tree under the assumption of competitive exclusion (Gause's law). 
@@ -1321,6 +1322,7 @@ sim_g_tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL
 	return(t1)
 }
 
+
 #' Calculate tree to tree distances in parallel
 #'
 #' Function to calculate tree to tree distances in parallel using the foreach package. 
@@ -1424,7 +1426,6 @@ dist_m <- function(trees, method, slices = 3, normalise = F){
 	colnames(dist_matrix) <- NULL
 	return(dist_matrix)
 }
-
 
 
 #' summary.nexdat

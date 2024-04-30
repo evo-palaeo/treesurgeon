@@ -33,6 +33,6 @@ tp <- get_tip_priors(vert_data$morph[,2], extra_state = T)
 colnames(tp[[1]]) <- c("bone absent", "secondary osteons absent", "secondary osteons present")
 library(future.apply)
 plan("multisession")
-loo_CV(tree = vert_data, x = tp[[1]], model = "ER")
-loo_CV(tree = vert_data, x = tp[[1]], model = "ARD")
+loo_cv(tree = vert_data, x = tp[[1]], model = "ER")
+loo_cv(tree = vert_data, x = tp[[1]], model = "ARD")
 }
