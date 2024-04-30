@@ -591,6 +591,7 @@ return(tree)
 #'
 #' Function to extract tip priors for ancestral state estimation from a character vector, list or data.frame. 
 #' @param morph a character vector, list or data.frame coded in 'standard' format (e.g. morphological data).
+#' @param treat.as.observed logical. If true, uncertainty (e.g. missing data, state ambiguities) are treated as observed and assigned a probability of 1. If false, uncertainty is treated as not observed directly. Probability is split equally between ambiguous states. 
 #' @param extar_state logical. If TRUE, inapplicable codings ('-') will be treated as an additional state.
 #' @return A 'list' of numeric matrices of length n, where n is equal to the number of characters included in the input. Each matrix is size i * j, where i is the number of taxa and j is the number of states included in the nth character. Each cell represents the likelihood of observing state j in taxon i.  
 #' @details This function converts categorical characters, coded in 'standard' format (e.g. '0', '1', '2', '-', '?', '0/1') into a 2D tip prior matrix, or list of 2D tip prior matrices. These matrices can be used instead of character vectors in some ancestral state estimation functions (e.g. castor: asr_mk_model(), phytools: fitMk()). The function assigns equal prior probability to observing any state if data are coded as missing ('?') or inapplicable ('-'). If data are coded as polymorphic or uncertain between specified states (e.g. '0/1'. '(0 1)'), prior probability is divided equally between possible states. If extra_state is set to TRUE, inapplicable characters are considered an additional state. This may be useful when dealing with datasets that employ an atomised coding strategy in which absence / presence of a trait is coded seperately from the condition of the trait (e.g. red, blue). In these cases, the coding of 'inapplicable' in the condition character is logically equivalent to absent.    
@@ -606,7 +607,7 @@ return(tree)
 #' plot(ancr(fitER), legend = "topleft")
 #' @export
 
-get_tip_priors <- function(morph, extra_state = F){
+get_tip_priors <- function(morph, treat.as.observed = TRUE, extra_state = F){
 	if(is.atomic(morph) == T){
 		morph_df <- as.data.frame(morph)
 	} else if(class(morph) == "list"){
@@ -673,7 +674,11 @@ get_tip_priors <- function(morph, extra_state = F){
 			tip_priors <- matrix(0, nrow(morph_df), n_states)
 			for(k in 1: nrow(morph_df)){
 				for(l in states[[k]]){
-					tip_priors[k, l] <- 1 / length(states[[k]])
+					if(treat.as.observed == T){
+						tip_priors[k, l] <- 1
+					} else {
+						tip_priors[k, l] <- 1 / length(states[[k]])
+					}
 				}
 			}
 			rownames(tip_priors) <- row.names(morph_df)
