@@ -4,10 +4,12 @@
 \alias{get_tip_priors}
 \title{Get tip priors.}
 \usage{
-get_tip_priors(morph, extra_state = F)
+get_tip_priors(morph, treat.as.observed = TRUE, extra_state = F)
 }
 \arguments{
 \item{morph}{a character vector, list or data.frame coded in 'standard' format (e.g. morphological data).}
+
+\item{treat.as.observed}{logical. If true, uncertainty (e.g. missing data, state ambiguities) are treated as observed and assigned a probability of 1. If false, uncertainty is treated as not observed directly. Probability is split equally between ambiguous states.}
 
 \item{extar_state}{logical. If TRUE, inapplicable codings ('-') will be treated as an additional state.}
 }
