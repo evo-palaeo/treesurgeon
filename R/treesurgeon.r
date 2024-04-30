@@ -1552,5 +1552,53 @@ summary.multi_nexdat <- function(x){
 }
 
 
+#' Leave-One-Out Cross-Validation
+#'
+#' Function to conduct leave-one-out cross-validation on an ancestral state estimation model. 
+#' @param tree an object of class 'phylo'.
+#' @param x character specifying the distance metric. Can be "RF", "quartet", "CID", "MSID" or "SPR".
+#' @param model a character string containing the model or a transition model specified in the form of a matrix. See ace for more details.
+#' @param fixedQ fixed value of transition matrix Q, if one is desired.
+#' @param ... optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user. 
+#' @return A value between 0 and 1 representing the mean raw error of the model.
+#' @details to do!
+#' @examples
+#' ## Load data
+#' head(vert_data$morph)
+## Convert secondary osteon character to tip priors, interpreting inapplicable ('-') as an additional state (i.e. absent).
+#' tp <- get_tip_priors(vert_data$morph[,2], extra_state = T)
+#' colnames(tp[[1]]) <- c("bone absent", "secondary osteons absent", "secondary osteons present")
+## Load parallel packages
+#' library(future.apply)
+#' plan("multisession")
+## Compare mean error of ER and ARD models using loo_cv.
+#' loo_CV(tree = vert_data, x = tp[[1]], model = "ER")
+#' loo_CV(tree = vert_data, x = tp[[1]], model = "ARD")
+
+#' @export 
+
+loo_cv <- function(tree, x, model, fixedQ=NULL, ...){
+    args.x <- list(...)
+    if (is.matrix(x)) {
+        x <- x[tree$tip.label, ]
+        m <- ncol(x)
+        states <- colnames(x)
+    } else {
+        x <- to.matrix(x, sort(unique(x)))
+        x <- x[tree$tip.label, ]
+        m <- ncol(x)
+        states <- colnames(x)
+    }
+    res <- future.apply::future_lapply(1:nrow(x), function(i){
+        true_state <- which(x[i,] > 0)
+        x2 <- x
+        x2[i,] <- 1/ncol(x2)
+        object <- fitMk(tree, x2, model, fixedQ=NULL, args.x)
+        cv <- ancr(object, tips=TRUE)
+        sum(cv$ace[i,true_state])
+    }, future.seed=TRUE)
+    return(1-(mean(unlist(res))))
+}
+
 
 
