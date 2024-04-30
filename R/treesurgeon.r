@@ -1572,8 +1572,8 @@ summary.multi_nexdat <- function(x){
 #' library(future.apply)
 #' plan("multisession")
 ## Compare mean error of ER and ARD models using loo_cv.
-#' loo_CV(tree = vert_data, x = tp[[1]], model = "ER")
-#' loo_CV(tree = vert_data, x = tp[[1]], model = "ARD")
+#' loo_cv(tree = vert_data, x = tp[[1]], model = "ER")
+#' loo_cv(tree = vert_data, x = tp[[1]], model = "ARD")
 
 #' @export 
 
