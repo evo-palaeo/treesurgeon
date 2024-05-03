@@ -689,6 +689,8 @@ get_tip_priors <- function(morph, treat.as.observed = TRUE, extra_state = F){
 	return(results)
 }
 
+########## FIX ABOVE! Does not work for nexdat! ########## 
+
 #' Amalgamate tip priors.
 #'
 #' Function to amalgamate tip priors for ancestral state estimation. 
