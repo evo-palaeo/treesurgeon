@@ -726,12 +726,18 @@ amal_tip_priors <- function(tp_1, tp_2){
 	if(all(rownames(tp_1) != rownames(tp_2))){
     	stop("rownames for tp_1 and tp_2 differ!")
 	}
+	if(is.null(colnames(tp_1))){
+		colnames(tp_1) <- 1:ncol(tp_1)
+	}
+	if(is.null(colnames(tp_2))){
+		colnames(tp_2) <- 1:ncol(tp_2)
+	}
     result <- matrix(0, nrow(tp_1), ncol(tp_1) * ncol(tp_2))
     col_n <- 1
     c_names <- character()
     for(i in 1:ncol(tp_1)){
         result[, col_n:(col_n -1 + ncol(tp_2))] <- tp_1[,i] * tp_2
-        c_names <- c(c_names, paste(i, 1:ncol(tp_2), sep = ""))
+        c_names <- c(c_names, paste(colnames(tp_1)[[i]], colnames(tp_2), sep = ""))
         col_n <- col_n + ncol(tp_2)
     }
     colnames(result) <- c_names
