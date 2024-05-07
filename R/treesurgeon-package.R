@@ -5,7 +5,7 @@
 #' @import ape
 #' @import phangorn
 #' @import phytools
-#' @importFrom doMC registerDoMC
+#' @importFrom doParallel registerDoParallel
 #' @importFrom foreach %dopar%
 #' @importFrom foreach foreach
 #' @importFrom future.apply future_lapply
