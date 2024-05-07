@@ -38,8 +38,15 @@ for(i in 1:199){
   trees2 <- c(trees2, rSPR(t2, 1))
 }
 trees <- c(trees1, trees2)
-## Set number of cores for parallel processes
-doMC::registerDoMC(cores = parallel::detectCores())
+
+## Regfister parallel backend for Windows
+library(doParallel)
+cl <- makeCluster(2)
+registerDoParallel(cl)
+
+## Register a parallel backend for Linux or MacOS
+library(doParallel) 
+registerDoParallel(cores=2)
 ## Calculate tree distances
 tree_dists <- dist_m(trees, method = "RF", slices = 3, normalise = T)
 ## Conduct PCA analysis on tree distances
