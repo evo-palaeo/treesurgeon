@@ -40,7 +40,7 @@ for(i in 1:199){
 trees <- c(trees1, trees2)
 
 ## Register parallel backend for Windows with doParallel
-cl <- makeCluster(2)
+cl <- parallel::makeCluster(2)
 doParallel::registerDoParallel(cl)
 
 ## Register parallel backend for Linux or MacOS with doParallel

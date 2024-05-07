@@ -1361,7 +1361,7 @@ sim_g_tree <- function(b, n = 100, t = 1000, ext = F, ext_t = NULL, ext_s = NULL
 #' trees <- c(trees1, trees2)
 #' 
 #' ## Register parallel backend for Windows with doParallel
-#' cl <- makeCluster(2)
+#' cl <- parallel::makeCluster(2)
 #' doParallel::registerDoParallel(cl)
 #' 
 #' ## Register parallel backend for Linux or MacOS with doParallel

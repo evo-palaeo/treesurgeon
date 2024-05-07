@@ -11,6 +11,7 @@
 #' @importFrom future.apply future_lapply
 #' @importFrom iterators iter
 #' @importFrom parallel detectCores
+#' @importFrom parallel makeCluster
 #' @importFrom Quartet QuartetStatus
 #' @importFrom TreeDist ClusteringInfoDist
 #' @importFrom TreeDist MatchingSplitInfoDistance
