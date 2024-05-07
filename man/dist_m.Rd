@@ -46,6 +46,7 @@ doParallel::registerDoParallel(cl)
 ## Register parallel backend for Linux or MacOS with doParallel
 nc <- parallel::detectCores()
 doParallel::registerDoParallel(cores=nc)
+
 ## Calculate tree distances
 tree_dists <- dist_m(trees, method = "RF", slices = 3, normalise = T)
 ## Conduct PCA analysis on tree distances
