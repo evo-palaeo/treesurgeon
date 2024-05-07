@@ -16,7 +16,7 @@ Imports:
     TreeTools,
     stringr,
     TreeDist,
-    doMC,
+    doParallel,
     foreach,
     Quartet,
     iterators,
