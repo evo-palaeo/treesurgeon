@@ -39,14 +39,13 @@ for(i in 1:199){
 }
 trees <- c(trees1, trees2)
 
-## Regfister parallel backend for Windows
-library(doParallel)
+## Register parallel backend for Windows with doParallel
 cl <- makeCluster(2)
-registerDoParallel(cl)
+doParallel::registerDoParallel(cl)
 
-## Register a parallel backend for Linux or MacOS
-library(doParallel) 
-registerDoParallel(cores=2)
+## Register parallel backend for Linux or MacOS with doParallel
+nc <- parallel::detectCores()
+doParallel::registerDoParallel(cores=nc)
 ## Calculate tree distances
 tree_dists <- dist_m(trees, method = "RF", slices = 3, normalise = T)
 ## Conduct PCA analysis on tree distances
