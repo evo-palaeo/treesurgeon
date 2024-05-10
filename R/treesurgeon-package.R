@@ -8,7 +8,6 @@
 #' @importFrom doParallel registerDoParallel
 #' @importFrom foreach %dopar%
 #' @importFrom foreach foreach
-#' @importFrom future.apply future_lapply
 #' @importFrom iterators iter
 #' @importFrom parallel detectCores
 #' @importFrom parallel makeCluster

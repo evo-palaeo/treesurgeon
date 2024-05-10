@@ -1599,26 +1599,26 @@ summary.multi_nexdat <- function(x){
 #' @export 
 
 loo_cv <- function(tree, x, model, fixedQ=NULL, ...){
-    args.x <- list(...)
-    if (is.matrix(x)) {
-        x <- x[tree$tip.label, ]
-        m <- ncol(x)
-        states <- colnames(x)
-    } else {
-        x <- to.matrix(x, sort(unique(x)))
-        x <- x[tree$tip.label, ]
-        m <- ncol(x)
-        states <- colnames(x)
-    }
-    res <- future.apply::future_lapply(1:nrow(x), function(i){
-        true_state <- which(x[i,] > 0)
-        x2 <- x
-        x2[i,] <- 1/ncol(x2)
-        object <- fitMk(tree, x2, model, fixedQ=NULL, args.x)
-        cv <- ancr(object, tips=TRUE)
-        sum(cv$ace[i,true_state])
-    }, future.seed=TRUE)
-    return(1-(mean(unlist(res))))
+	args.x <- list(...)
+	if (is.matrix(x)) {
+    	x <- x[tree$tip.label, ]
+    	m <- ncol(x)
+    	states <- colnames(x)
+	} else {
+    	x <- to.matrix(x, sort(unique(x)))
+    	x <- x[tree$tip.label, ]
+    	m <- ncol(x)
+    	states <- colnames(x)
+	}
+	res <- foreach::foreach(i = 1:nrow(x), .combine = 'cbind')%dopar% {
+    	true_state <- which(x[i,] > 0)
+    	x2 <- x
+    	x2[i,] <- 1/ncol(x2)
+    	object <- fitMk(tree, x2, model, fixedQ=NULL, args.x)
+    	cv <- ancr(object, tips=TRUE)
+    	sum(cv$ace[i,true_state])
+	}
+	return(1-(mean(res)))
 }
 
 
