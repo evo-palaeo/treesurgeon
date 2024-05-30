@@ -1488,8 +1488,6 @@ summary.nexdat <- function(x){
 }
 
 
-
-
 #' summary.multi_nexdat
 #'
 #' Function to sumarise an object of class 'multi_nexdat'. 
@@ -1573,15 +1571,152 @@ summary.multi_nexdat <- function(x){
 }
 
 
+#' Brier Score
+#'
+#' Function to calculate the Brier score given a vector of predicted probabilities and a vector of actual outcomes.  
+#' @param prediction a numeric vector of length equal to the number of possible outcomes. Each element represents the probability (between 0 and 1) of a possible outcome. 
+#' @param truth A vector of actual outcomes, with 0 indicating the outcome did not occur and 1 indicating it did.
+#' @return A Brier score between 0 and 1.
+#' @details to do!
+#' @examples
+#' ## Example marginal ancestral state estimate for a node
+#' x <- runif(n = 4, min = 0, max = 10)
+#' x <- x/sum(x)
+#' names(x) <- 1:4
+#' x
+#' ## Example true data
+#' y <- sample(c(1, 0, 0, 0))
+#' names(y) <- 1:4
+#' y
+#' ## Calculate Brier score
+#' Brier(prediction = x, truth = y)
+
+Brier <- function(prediction, truth){
+    n <- length(truth)
+    if(n != length(prediction)){
+        stop("truth and prediction are different lengths!")
+    }
+	if(max(prediction) > 1){
+		stop("You cannot have a probability greater than 1")
+	}
+    squared_diff <- (prediction - truth)^2 
+    b_score <- (sum(squared_diff))/n
+    return(b_score)
+}
+
+
+#' Multicalss Brier Score
+#'
+#' Function to calculate the Multiclass Brier score given a matrix of predicted probabilities and a vector or matrix of actual outcomes.  
+#' @param prediction a matrix of predicted probabilities. 
+#' @param truth a numeric vector of length equal to the number of classes with each element encoding the true outcome. Alternatively, a one-hot encoded matrix with rows equal to the number of classes and columns equal to the number of outcomes.
+#' @return The multiclass Brier score.
+#' @details to do!
+#' @examples
+#' ## Simulate some tip data
+#' t1 <- rtree(20)
+#' Q <- structure(c(-0.5, 0.4, 0.05, 0.3, -0.5, 0.5, 0.2, 0.1, -0.55), dim = c(3L, 3L), dimnames = list(c("1", "2", "3"), c("1", "2", "3")))
+#' sim_x <- sim.Mk(t1, Q, internal = T)
+#' tip_states <- head(sim_x, Ntip(t1))
+#' node_states <- tail(sim_x, Nnode(t1))
+#' ## Estimate ancestral states
+#' fitARD <- fitMk(t1, x = tip_states, model = "ARD")
+#' ancARD <- ancr(fitARD)
+#'  ## Calculate Multiclass Brier score
+#' multBrier(prediction = ancARD$ace, truth = node_states)
+multBrier <- function(prediction, truth){
+    if(is.matrix(truth)){
+		one_hot <- truth
+	}
+	if(is.numeric(truth)){
+		one_hot <- matrix(0, nrow = length(truth), ncol = ncol(prediction))
+  		one_hot[cbind(seq_along(truth), truth)] <- 1
+	}
+	if(any(dim(one_hot) == dim(prediction)) == F){
+		stop("truth and prediction are of different dimensions!")
+	}
+    mb_score <- mean(rowSums((prediction - one_hot)^2))
+	return(mb_score)
+}
+
+
+#' Raw Score
+#'
+#' Function to calculate the Raw score given a vector of predicted probabilities and a vector of actual outcomes.  
+#' @param prediction a numeric vector of length equal to the number of possible outcomes. Each element represents the probability (between 0 and 1) of a possible outcome. 
+#' @param truth A vector of actual outcomes, with 0 indicating the outcome did not occur and 1 indicating it did.
+#' @return A Raw score between 0 and 1.
+#' @details to do!
+#' @examples
+#' ## Example marginal ancestral state estimate for a node
+#' x <- runif(n = 4, min = 0, max = 10)
+#' x <- x/sum(x)
+#' names(x) <- 1:4
+#' x
+#' ## Example true data
+#' y <- sample(c(1, 0, 0, 0))
+#' names(y) <- 1:4
+#' y
+#' ## Calculate Brier score
+#' Raw(prediction = x, truth = y)
+
+Raw <- function(prediction, truth){
+    n <- length(truth)
+    if(n != length(prediction)){
+        stop("truth and prediction are different lengths!")
+    }
+	if(max(prediction) > 1){
+		stop("You cannot have a probability greater than 1")
+	}
+    r_score <- 1 - sum(prediction[which(truth == 1)])
+    return(r_score)
+}
+
+
+#' Multicalss Raw Score
+#'
+#' Function to calculate the Multiclass Brier score given a matrix of predicted probabilities and a vector or matrix of actual outcomes.  
+#' @param prediction a matrix of predicted probabilities. 
+#' @param truth a numeric vector of length equal to the number of classes with each element encoding the true outcome. Alternatively, a one-hot encoded matrix with rows equal to the number of classes and columns equal to the number of outcomes.
+#' @return The multiclass Brier score.
+#' @details to do!
+#' @examples
+#' ## Simulate some tip data
+#' t1 <- rtree(20)
+#' Q <- structure(c(-0.5, 0.4, 0.05, 0.3, -0.5, 0.5, 0.2, 0.1, -0.55), dim = c(3L, 3L), dimnames = list(c("1", "2", "3"), c("1", "2", "3")))
+#' sim_x <- sim.Mk(t1, Q, internal = T)
+#' tip_states <- head(sim_x, Ntip(t1))
+#' node_states <- tail(sim_x, Nnode(t1))
+#' ## Estimate ancestral states
+#' fitARD <- fitMk(t1, x = tip_states, model = "ARD")
+#' ancARD <- ancr(fitARD)
+#'  ## Calculate Multiclass Brier score
+#' multRaw(prediction = ancARD$ace, truth = node_states)
+multBrier <- function(prediction, truth){
+    if(is.matrix(truth)){
+		one_hot <- truth
+	}
+	if(is.numeric(truth)){
+		one_hot <- matrix(0, nrow = length(truth), ncol = ncol(prediction))
+  		one_hot[cbind(seq_along(truth), truth)] <- 1
+	}
+	if(any(dim(one_hot) == dim(prediction)) == F){
+		stop("truth and prediction are of different dimensions!")
+	}
+    mr_score <- mean(1 - rowSums(prediction * one_hot))
+	return(mr_score)
+}
+
+
 #' Leave-One-Out Cross-Validation
 #'
 #' Function to conduct leave-one-out cross-validation on an ancestral state estimation model. 
 #' @param tree an object of class 'phylo'.
-#' @param x character specifying the distance metric. Can be "RF", "quartet", "CID", "MSID" or "SPR".
+#' @param x a vector of tip values for species; names(x) should be the species names. 
 #' @param model a character string containing the model or a transition model specified in the form of a matrix. See ace for more details.
 #' @param fixedQ fixed value of transition matrix Q, if one is desired.
 #' @param ... optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user. 
-#' @return A value between 0 and 1 representing the mean raw error of the model.
+#' @return The multiclass Raw and Brier score for the model.
 #' @details to do!
 #' @examples
 #' ## Load data
@@ -1589,9 +1724,12 @@ summary.multi_nexdat <- function(x){
 ## Convert secondary osteon character to tip priors, interpreting inapplicable ('-') as an additional state (i.e. absent).
 #' tp <- get_tip_priors(vert_data$morph[,2], extra_state = T)
 #' colnames(tp[[1]]) <- c("bone absent", "secondary osteons absent", "secondary osteons present")
-## Load parallel packages
-#' library(future.apply)
-#' plan("multisession")
+#' ## Register parallel backend for Windows with doParallel
+#' cl <- parallel::makeCluster(2)
+#' doParallel::registerDoParallel(cl)
+#' ## Register parallel backend for Linux or MacOS with doParallel
+#' nc <- parallel::detectCores()
+#' doParallel::registerDoParallel(cores=nc)
 ## Compare mean error of ER and ARD models using loo_cv.
 #' loo_cv(tree = vert_data, x = tp[[1]], model = "ER")
 #' loo_cv(tree = vert_data, x = tp[[1]], model = "ARD")
@@ -1611,15 +1749,13 @@ loo_cv <- function(tree, x, model, fixedQ=NULL, ...){
     	states <- colnames(x)
 	}
 	res <- foreach::foreach(i = 1:nrow(x), .combine = 'cbind')%dopar% {
-    	true_state <- which(x[i,] > 0)
+    	true_state <- x[i,]
     	x2 <- x
-    	x2[i,] <- 1/ncol(x2)
+    	x2[i,] <- 1
     	object <- fitMk(tree, x2, model, fixedQ=NULL, args.x)
     	cv <- ancr(object, tips=TRUE)
-    	sum(cv$ace[i,true_state])
+    	c("Raw"= Raw(cv$ace[i,], true_state), "Brier" = Brier(cv$ace[i,], true_state))
 	}
-	return(1-(mean(res)))
+	return(rowMeans(res))
 }
-
-
 
