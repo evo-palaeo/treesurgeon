@@ -1692,7 +1692,7 @@ Raw <- function(prediction, truth){
 #' ancARD <- ancr(fitARD)
 #'  ## Calculate Multiclass Brier score
 #' multRaw(prediction = ancARD$ace, truth = node_states)
-multBrier <- function(prediction, truth){
+multRaw <- function(prediction, truth){
     if(is.matrix(truth)){
 		one_hot <- truth
 	}

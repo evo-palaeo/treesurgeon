@@ -9,7 +9,7 @@ loo_cv(tree, x, model, fixedQ = NULL, ...)
 \arguments{
 \item{tree}{an object of class 'phylo'.}
 
-\item{x}{character specifying the distance metric. Can be "RF", "quartet", "CID", "MSID" or "SPR".}
+\item{x}{a vector of tip values for species; names(x) should be the species names.}
 
 \item{model}{a character string containing the model or a transition model specified in the form of a matrix. See ace for more details.}
 
@@ -18,7 +18,7 @@ loo_cv(tree, x, model, fixedQ = NULL, ...)
 \item{...}{optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user.}
 }
 \value{
-A value between 0 and 1 representing the mean raw error of the model.
+The multiclass Raw and Brier score for the model.
 }
 \description{
 Function to conduct leave-one-out cross-validation on an ancestral state estimation model.
@@ -31,8 +31,12 @@ to do!
 head(vert_data$morph)
 tp <- get_tip_priors(vert_data$morph[,2], extra_state = T)
 colnames(tp[[1]]) <- c("bone absent", "secondary osteons absent", "secondary osteons present")
-library(future.apply)
-plan("multisession")
+## Register parallel backend for Windows with doParallel
+cl <- parallel::makeCluster(2)
+doParallel::registerDoParallel(cl)
+## Register parallel backend for Linux or MacOS with doParallel
+nc <- parallel::detectCores()
+doParallel::registerDoParallel(cores=nc)
 loo_cv(tree = vert_data, x = tp[[1]], model = "ER")
 loo_cv(tree = vert_data, x = tp[[1]], model = "ARD")
 }
