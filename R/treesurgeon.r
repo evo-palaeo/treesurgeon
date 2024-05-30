@@ -1590,6 +1590,8 @@ summary.multi_nexdat <- function(x){
 #' y
 #' ## Calculate Brier score
 #' Brier(prediction = x, truth = y)
+#' 
+#' @export 
 
 Brier <- function(prediction, truth){
     n <- length(truth)
@@ -1624,6 +1626,8 @@ Brier <- function(prediction, truth){
 #' ancARD <- ancr(fitARD)
 #'  ## Calculate Multiclass Brier score
 #' multBrier(prediction = ancARD$ace, truth = node_states)
+#'
+#' @export 
 multBrier <- function(prediction, truth){
     if(is.matrix(truth)){
 		one_hot <- truth
@@ -1640,12 +1644,12 @@ multBrier <- function(prediction, truth){
 }
 
 
-#' Raw Score
+#' Raw error
 #'
-#' Function to calculate the Raw score given a vector of predicted probabilities and a vector of actual outcomes.  
+#' Function to calculate the Raw error given a vector of predicted probabilities and a vector of actual outcomes.  
 #' @param prediction a numeric vector of length equal to the number of possible outcomes. Each element represents the probability (between 0 and 1) of a possible outcome. 
 #' @param truth A vector of actual outcomes, with 0 indicating the outcome did not occur and 1 indicating it did.
-#' @return A Raw score between 0 and 1.
+#' @return A Raw error between 0 and 1.
 #' @details to do!
 #' @examples
 #' ## Example marginal ancestral state estimate for a node
@@ -1657,8 +1661,10 @@ multBrier <- function(prediction, truth){
 #' y <- sample(c(1, 0, 0, 0))
 #' names(y) <- 1:4
 #' y
-#' ## Calculate Brier score
+#' ## Calculate Raw error
 #' Raw(prediction = x, truth = y)
+#' 
+#' @export 
 
 Raw <- function(prediction, truth){
     n <- length(truth)
@@ -1673,12 +1679,12 @@ Raw <- function(prediction, truth){
 }
 
 
-#' Multicalss Raw Score
+#' Multicalss Raw error
 #'
-#' Function to calculate the Multiclass Brier score given a matrix of predicted probabilities and a vector or matrix of actual outcomes.  
+#' Function to calculate the Multiclass Raw error given a matrix of predicted probabilities and a vector or matrix of actual outcomes.  
 #' @param prediction a matrix of predicted probabilities. 
 #' @param truth a numeric vector of length equal to the number of classes with each element encoding the true outcome. Alternatively, a one-hot encoded matrix with rows equal to the number of classes and columns equal to the number of outcomes.
-#' @return The multiclass Brier score.
+#' @return The multiclass Raw error.
 #' @details to do!
 #' @examples
 #' ## Simulate some tip data
@@ -1690,7 +1696,7 @@ Raw <- function(prediction, truth){
 #' ## Estimate ancestral states
 #' fitARD <- fitMk(t1, x = tip_states, model = "ARD")
 #' ancARD <- ancr(fitARD)
-#'  ## Calculate Multiclass Brier score
+#'  ## Calculate Multiclass Raw error
 #' multRaw(prediction = ancARD$ace, truth = node_states)
 multRaw <- function(prediction, truth){
     if(is.matrix(truth)){
@@ -1716,7 +1722,7 @@ multRaw <- function(prediction, truth){
 #' @param model a character string containing the model or a transition model specified in the form of a matrix. See ace for more details.
 #' @param fixedQ fixed value of transition matrix Q, if one is desired.
 #' @param ... optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user. 
-#' @return The mean Raw and Brier scores for the model.
+#' @return The mean Raw error and Brier score for the model.
 #' @details to do!
 #' @examples
 #' ## Load data
