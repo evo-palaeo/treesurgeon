@@ -2,7 +2,7 @@
 % Please edit documentation in R/treesurgeon.r
 \name{multRaw}
 \alias{multRaw}
-\title{Multicalss Raw Score}
+\title{Multicalss Raw error}
 \usage{
 multRaw(prediction, truth)
 }
@@ -12,10 +12,10 @@ multRaw(prediction, truth)
 \item{truth}{a numeric vector of length equal to the number of classes with each element encoding the true outcome. Alternatively, a one-hot encoded matrix with rows equal to the number of classes and columns equal to the number of outcomes.}
 }
 \value{
-The multiclass Brier score.
+The multiclass Raw error.
 }
 \description{
-Function to calculate the Multiclass Brier score given a matrix of predicted probabilities and a vector or matrix of actual outcomes.
+Function to calculate the Multiclass Raw error given a matrix of predicted probabilities and a vector or matrix of actual outcomes.
 }
 \details{
 to do!
@@ -30,6 +30,6 @@ node_states <- tail(sim_x, Nnode(t1))
 ## Estimate ancestral states
 fitARD <- fitMk(t1, x = tip_states, model = "ARD")
 ancARD <- ancr(fitARD)
- ## Calculate Multiclass Brier score
+ ## Calculate Multiclass Raw error
 multRaw(prediction = ancARD$ace, truth = node_states)
 }

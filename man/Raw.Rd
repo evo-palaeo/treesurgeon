@@ -2,7 +2,7 @@
 % Please edit documentation in R/treesurgeon.r
 \name{Raw}
 \alias{Raw}
-\title{Raw Score}
+\title{Raw error}
 \usage{
 Raw(prediction, truth)
 }
@@ -12,10 +12,10 @@ Raw(prediction, truth)
 \item{truth}{A vector of actual outcomes, with 0 indicating the outcome did not occur and 1 indicating it did.}
 }
 \value{
-A Raw score between 0 and 1.
+A Raw error between 0 and 1.
 }
 \description{
-Function to calculate the Raw score given a vector of predicted probabilities and a vector of actual outcomes.
+Function to calculate the Raw error given a vector of predicted probabilities and a vector of actual outcomes.
 }
 \details{
 to do!
@@ -30,6 +30,7 @@ x
 y <- sample(c(1, 0, 0, 0))
 names(y) <- 1:4
 y
-## Calculate Brier score
+## Calculate Raw error
 Raw(prediction = x, truth = y)
+
 }

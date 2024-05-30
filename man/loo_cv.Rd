@@ -18,7 +18,7 @@ loo_cv(tree, x, model, fixedQ = NULL, ...)
 \item{...}{optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user.}
 }
 \value{
-The multiclass Raw and Brier score for the model.
+The mean Raw error and Brier score for the model.
 }
 \description{
 Function to conduct leave-one-out cross-validation on an ancestral state estimation model.

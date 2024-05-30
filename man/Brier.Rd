@@ -32,4 +32,5 @@ names(y) <- 1:4
 y
 ## Calculate Brier score
 Brier(prediction = x, truth = y)
+
 }

@@ -32,4 +32,5 @@ fitARD <- fitMk(t1, x = tip_states, model = "ARD")
 ancARD <- ancr(fitARD)
  ## Calculate Multiclass Brier score
 multBrier(prediction = ancARD$ace, truth = node_states)
+
 }
