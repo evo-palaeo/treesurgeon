@@ -1716,7 +1716,7 @@ multRaw <- function(prediction, truth){
 #' @param model a character string containing the model or a transition model specified in the form of a matrix. See ace for more details.
 #' @param fixedQ fixed value of transition matrix Q, if one is desired.
 #' @param ... optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user. 
-#' @return The multiclass Raw and Brier score for the model.
+#' @return The mean Raw and Brier scores for the model.
 #' @details to do!
 #' @examples
 #' ## Load data
