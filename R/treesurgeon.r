@@ -1632,7 +1632,7 @@ multBrier <- function(prediction, truth){
     if(is.matrix(truth)){
 		one_hot <- truth
 	}
-	if(is.numeric(truth)){
+	if(is.atomic(truth)){
 		one_hot <- matrix(0, nrow = length(truth), ncol = ncol(prediction))
   		one_hot[cbind(seq_along(truth), truth)] <- 1
 	}
@@ -1702,7 +1702,7 @@ multRaw <- function(prediction, truth){
     if(is.matrix(truth)){
 		one_hot <- truth
 	}
-	if(is.numeric(truth)){
+	if(is.atomic(truth)){
 		one_hot <- matrix(0, nrow = length(truth), ncol = ncol(prediction))
   		one_hot[cbind(seq_along(truth), truth)] <- 1
 	}
