@@ -1758,7 +1758,7 @@ loo_cv <- function(tree, x, model, fixedQ=NULL, ...){
     	true_state <- x[i,]
     	x2 <- x
     	x2[i,] <- 1
-    	object <- fitMk(tree, x2, model, fixedQ=NULL, args.x)
+    	object <- fitMk(tree, x2, model, fixedQ=fixedQ, args.x)
     	cv <- ancr(object, tips=TRUE)
     	c("Raw"= Raw(cv$ace[i,], true_state), "Brier" = Brier(cv$ace[i,], true_state))
 	}
