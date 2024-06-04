@@ -1698,6 +1698,8 @@ Raw <- function(prediction, truth){
 #' ancARD <- ancr(fitARD)
 #'  ## Calculate Multiclass Raw error
 #' multRaw(prediction = ancARD$ace, truth = node_states)
+#' @export 
+
 multRaw <- function(prediction, truth){
     if(is.matrix(truth)){
 		one_hot <- truth
