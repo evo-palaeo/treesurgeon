@@ -1743,7 +1743,7 @@ entropy <- function(x) {
 	if(round(sum(x), digits = 5) != 1){
     	stop("Probabilities do not sum to 1")
   	}
-	x <- x[p > 0]
+	x <- x[x > 0]
 	e_score <- -sum(x * log2(x))
   	return(e_score)
 }
