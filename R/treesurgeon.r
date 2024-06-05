@@ -1715,6 +1715,38 @@ multRaw <- function(prediction, truth){
 	return(mr_score)
 }
 
+#' Shannon Entropy
+#'
+#' Function to calculate the Shannon Entropy of a vector or probabilities.  
+#' @param x a numeric vector of probabilities that sum to 1. 
+#' @return The Shannon Entropy score. 
+#' @details to do!
+#' @examples
+#' ## Load data
+#' head(vert_data$morph)
+## Convert secondary osteon character to tip priors, interpreting inapplicable ('-') as an additional state (i.e. absent).
+#' tp <- get_tip_priors(vert_data$morph[,2], extra_state = T)
+#' colnames(tp[[1]]) <- c("bone absent", "secondary osteons absent", "secondary osteons present")
+## Get ancestral state estimates
+#' fitER <- fitMk(tree = vert_data, x = tp[[1]], model = "ER")
+#' ancER <- ancr(fitER)
+#' ## Calculate mean Entropy
+#' mean(apply(ancER$ace, 1, entropy))
+#' @export 
+
+entropy <- function(x) {
+	# Ensure x is numeric
+	if(is.numeric(x) == F){
+		stop("x is not numeric!")
+	}
+	# Ensure probabilities sum to 1
+	if(round(sum(x), digits = 5) != 1){
+    	stop("Probabilities do not sum to 1")
+  	}
+	e_score <- -sum(x * log2(x))
+  	return(e_score)
+}
+
 
 #' Leave-One-Out Cross-Validation
 #'
