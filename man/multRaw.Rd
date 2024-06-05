@@ -2,7 +2,7 @@
 % Please edit documentation in R/treesurgeon.r
 \name{multRaw}
 \alias{multRaw}
-\title{Multicalss Raw error}
+\title{Multiclass Raw error}
 \usage{
 multRaw(prediction, truth)
 }

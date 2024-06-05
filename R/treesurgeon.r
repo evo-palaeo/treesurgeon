@@ -1679,7 +1679,7 @@ Raw <- function(prediction, truth){
 }
 
 
-#' Multicalss Raw error
+#' Multiclass Raw error
 #'
 #' Function to calculate the Multiclass Raw error given a matrix of predicted probabilities and a vector or matrix of actual outcomes.  
 #' @param prediction a matrix of predicted probabilities. 
