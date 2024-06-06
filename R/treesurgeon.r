@@ -1800,7 +1800,7 @@ loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
     	object <- fitMk(tree, x2, model, fixedQ=fixedQ, args.x)
     	cv <- ancr(object, tips=TRUE, type = type)
 		if(is.matrix(cv$ace) == F){
-			cv$ace <- to.matrix(cv$ace, seq = 1:ncol(x))
+			cv$ace <- to.matrix(cv$ace, seq = levels(cv$ace))
 		}
     	c("Raw"= Raw(cv$ace[i,], true_state), "Brier" = Brier(cv$ace[i,], true_state))
 	}
