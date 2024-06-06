@@ -1756,6 +1756,7 @@ entropy <- function(x) {
 #' @param x a vector of tip values for species; names(x) should be the species names. 
 #' @param model a character string containing the model or a transition model specified in the form of a matrix. See ace for more details.
 #' @param fixedQ fixed value of transition matrix Q, if one is desired.
+#' @param type determines the reconstruction type. Either "joint" or "marginal".
 #' @param ... optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user. 
 #' @return The mean Raw error and Brier score for the model.
 #' @details to do!
@@ -1777,7 +1778,10 @@ entropy <- function(x) {
 
 #' @export 
 
-loo_cv <- function(tree, x, model, fixedQ=NULL, ...){
+loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
+	if(any(c("joint", "marginal") == type) == F){
+		stop("type must be either 'joint' or 'marginal'!")
+	}
 	args.x <- list(...)
 	if (is.matrix(x)) {
     	x <- x[tree$tip.label, ]
@@ -1794,7 +1798,7 @@ loo_cv <- function(tree, x, model, fixedQ=NULL, ...){
     	x2 <- x
     	x2[i,] <- 1
     	object <- fitMk(tree, x2, model, fixedQ=fixedQ, args.x)
-    	cv <- ancr(object, tips=TRUE)
+    	cv <- ancr(object, tips=TRUE, type = type)
     	c("Raw"= Raw(cv$ace[i,], true_state), "Brier" = Brier(cv$ace[i,], true_state))
 	}
 	return(rowMeans(res))

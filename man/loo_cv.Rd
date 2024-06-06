@@ -4,7 +4,7 @@
 \alias{loo_cv}
 \title{Leave-One-Out Cross-Validation}
 \usage{
-loo_cv(tree, x, model, fixedQ = NULL, ...)
+loo_cv(tree, x, model = "ER", fixedQ = NULL, type = "marginal", ...)
 }
 \arguments{
 \item{tree}{an object of class 'phylo'.}
@@ -14,6 +14,8 @@ loo_cv(tree, x, model, fixedQ = NULL, ...)
 \item{model}{a character string containing the model or a transition model specified in the form of a matrix. See ace for more details.}
 
 \item{fixedQ}{fixed value of transition matrix Q, if one is desired.}
+
+\item{type}{determines the reconstruction type. Either "joint" or "marginal".}
 
 \item{...}{optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user.}
 }
