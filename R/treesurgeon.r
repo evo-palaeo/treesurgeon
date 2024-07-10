@@ -696,7 +696,8 @@ get_tip_priors <- function(morph, treat.as.observed = TRUE, extra_state = F){
 #' Function to amalgamate tip priors for ancestral state estimation. 
 #' @param tp_1 an object of class 'data.frame' compising the tip priors of the controlling character.
 #' @param tp_2 an object of class 'data.frame' compising the tip priors of the dependent character.
-#' @return An object of class 'data.frame' compising the amalgamated tip priors of the controlling and dependent character. 
+#' @param type either "SMM" or "ED"
+#' #' @return An object of class 'data.frame' compising the amalgamated tip priors of the controlling and dependent character. 
 #' @details This function amalgamates two seperate sets of tip priors, corresponding to the controlling and dependent character respectively, into a single set of tip priors corresponding to a Structured Markov Model (SMM) equipped with hidden states (see Tarasov 2019).
 #' @references Tarasov, S., 2019. Integration of anatomy ontologies and evo-devo using structured Markov models suggests a new framework for modeling discrete phenotypic traits. Systematic biology, 68(5), pp.698-716.
 #' @examples
@@ -704,25 +705,32 @@ get_tip_priors <- function(morph, treat.as.observed = TRUE, extra_state = F){
 #' data(vert_data)
 #' head(vert_data$morph)
 #' tp <- get_tip_priors(vert_data$morph, extra_state = F)
-#' tp_SMM <- amal_tip_priors(tp[[1]], tp[[2]])
+#' tp_SMM <- amal_tip_priors(tp[[1]], tp[[2]], type = "SMM")
 #' colnames(tp_SMM) <- c("aA", "aP", "pA", "pP")
+#' tp_ED <- amal_tip_priors(tp[[1]], tp[[2]], type = "ED")
+#' colnames(tp_ED) <- c("bone absent", "secondary osteons absent", "secondary osteons present")
 #' ## Get SMM using rphenoscate
-#' devtools::install_github("uyedaj/rphenoscate")
+#' remotes::install_github("uyedaj/rphenoscate")
 #' library(rphenoscate)
 #' c1 <- matrix(c(-1, 1, 1, -1), 2, 2, byrow = TRUE, dimnames =list( c("a", "p"), c("a", "p")) )
 #' c2 <-matrix(c(-2, 2, 2, -2), 2, 2, byrow = TRUE, dimnames =list( c("A", "P"), c("A", "P")) )
 #' SMM_ind <- amaSMM_2Q(c1, c2, controlling.state = NULL, diag.as = 0)
+#' ED <- amaED(c1, c2, diag.as = 0)
 #' ## conduct ancestral state analysis using phytools and plot.
 #' fitSMM <- fitMk(tree = vert_data, x = tp_SMM, model = SMM_ind)
+#' fitED <- fitMk(tree = vert_data, x = tp_ED, model = ED)
 #' ancSMM <- ancr(fitSMM)
+#' ancED <- ancr(fitED)
 #' plot(ancSMM, legend = "topleft")
 #' ## Collapse hidden states to observed states and plot
 #' ancSMM$ace <- as.matrix(data.frame("bone absent" = ancSMM$ace[,1] + ancSMM$ace[,2], "secondary osteons absent" = ancSMM$ace[,3], "secondary osteons present" = ancSMM$ace[,4]))
 #' attributes(ancSMM)$data <- as.matrix(data.frame("bone absent" = tp_SMM[,1] + tp_SMM[,2], "secondary osteons absent" = tp_SMM[,3], "secondary osteons present" = tp_SMM[,4]))
 #' plot(ancSMM, legend = "topleft")
+#' ## plot ED model
+#' plot(ancED, legend = "topleft")
 #' @export
 
-amal_tip_priors <- function(tp_1, tp_2){
+amal_tip_priors <- function(tp_1, tp_2, type = "SMM"){
 	if(all(rownames(tp_1) != rownames(tp_2))){
     	stop("rownames for tp_1 and tp_2 differ!")
 	}
@@ -742,6 +750,12 @@ amal_tip_priors <- function(tp_1, tp_2){
     }
     colnames(result) <- c_names
 	rownames(result) <- rownames(tp_1)
+	if(type == "ED"){
+		absent <- rowSums(result[,1:ncol(tp_2)])
+		absent[which(absent > 1)] <- 1
+		names(absent) <- rownames(tp_1)
+		result <- as.matrix(cbind(data.frame("absent" = absent), result[,(ncol(tp_2) + 1):ncol(result)]))
+	}
     return(result)
 }
 
