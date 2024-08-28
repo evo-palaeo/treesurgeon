@@ -1772,7 +1772,7 @@ entropy <- function(x) {
 #' @param fixedQ fixed value of transition matrix Q, if one is desired.
 #' @param type determines the reconstruction type. Either "joint" or "marginal".
 #' @param ... optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user. 
-#' @return The mean Raw error and Brier score for the model.
+#' @return A numeric vector reporting the mean Raw error, the Brier score and the mean log likelihood of the model.
 #' @details to do!
 #' @examples
 #' ## Load data
@@ -1816,7 +1816,7 @@ loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
 		if(is.matrix(cv$ace) == F){
 			cv$ace <- to.matrix(cv$ace, seq = object$states)
 		}
-    	c("Raw"= Raw(cv$ace[i,], true_state), "Brier" = Brier(cv$ace[i,], true_state))
+    	c("Raw"= Raw(cv$ace[i,], true_state), "Brier" = Brier(cv$ace[i,], true_state), "mean logL" = object$$logLik)
 	}
 	return(rowMeans(res))
 }
