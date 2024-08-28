@@ -1816,7 +1816,7 @@ loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
 		if(is.matrix(cv$ace) == F){
 			cv$ace <- to.matrix(cv$ace, seq = object$states)
 		}
-    	c("Raw"= Raw(cv$ace[i,], true_state), "Brier" = Brier(cv$ace[i,], true_state), "mean logL" = object$$logLik)
+    	c("Raw"= Raw(cv$ace[i,], true_state), "Brier" = Brier(cv$ace[i,], true_state), "mean logL" = object$logLik)
 	}
 	return(rowMeans(res))
 }
