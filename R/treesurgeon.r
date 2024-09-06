@@ -610,6 +610,8 @@ return(tree)
 get_tip_priors <- function(morph, treat.as.observed = TRUE, extra_state = F){
 	if(is.atomic(morph) == T){
 		morph_df <- as.data.frame(morph)
+	} else if(any(class(morph) == "list")){
+		morph_df <- t(as.data.frame(morph))
 	} else if(class(morph) == "list"){
 		morph_df <- t(as.data.frame(morph))
 	} else {
@@ -688,8 +690,6 @@ get_tip_priors <- function(morph, treat.as.observed = TRUE, extra_state = F){
 	}
 	return(results)
 }
-
-########## FIX ABOVE! Does not work for nexdat! ########## 
 
 #' Amalgamate tip priors.
 #'
