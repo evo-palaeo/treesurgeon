@@ -788,7 +788,7 @@ amal_tip_priors <- function(tp_1, tp_2, type = "SMM"){
 get_contrast <- function(morph){
 	if(is.atomic(morph) == T){
 		morph_df <- as.data.frame(morph)
-	} else if(class(morph) == "list"){
+	} else if(any(class(morph) == "list")){
 		morph_df <- t(as.data.frame(morph))
 	} else {
 		morph_df <- morph
