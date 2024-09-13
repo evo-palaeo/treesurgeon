@@ -27,6 +27,26 @@
 "vert_data"
 
 
+#' Character matrix of Keating & Donoghue 2016
+#'
+#' Morphological taxon-by-character matrix of Keating & Donoghue 2016. 
+#'
+#' @docType data
+#'
+#' @usage data(KeatingDonoghue)
+#'
+#' @format an object of class matrix (array).
+#'
+#' @keywords datasets
+#'
+#' @references Keating, J.N. and Donoghue, P.C., 2016. Histology and affinity of anaspids, and the early evolution of the vertebrate dermal skeleton. Proceedings of the Royal Society B: Biological Sciences, 283(1826), p.20152917.
+#' 
+#' @examples
+#' data(KeatingDonoghue)
+#' head(KeatingDonoghue)
+"KeatingDonoghue"
+
+
 #' Dinosaur-bird integument data
 #'
 #' Phylogeny and associated integument character data modified from Cockx et al (2024, in prep). 
@@ -1821,3 +1841,37 @@ loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
 	return(rowMeans(res))
 }
 
+
+
+
+#' Comma-seperated values to phyDat
+#'
+#' Function to convert a taxon-by-character matrix csv file into a phyDat object 
+#' @param file the name of the file which the data are to be read from.
+#' @param ... Further arguments to be passed to read.csv. 
+#' @return An object of class phyDat.
+#' @details This function is a conveniant shortcut for importing taxon-by-character matrices saved as CSV files and converting them directly into phyDat objects. Tokens are interpreted using the treesurgeon function get_contrast().  
+#' @examples
+#' ## Load data
+#' data(KeatingDonoghue)
+#' 
+#' ## write as csv file
+#' write.csv(KeatingDonoghue, file = "temp.csv")
+#' 
+#' ## Import using the function
+#' phy_dat <- csv_to_phyDat(file = "temp.csv", row.names = 1)
+#' phy_dat
+#' 
+#' ## delete temporary csv
+#' file.remove("temp.csv")
+#' 
+#' #' @export 
+#' 
+csv_to_phyDat <- function(file, ...){
+	args.x <- list(...)
+	dat <- read.csv(file, args.x)
+	dat2 <- as.matrix(dat)
+	cont <- get_contrast(dat2)
+	pdat <- phyDat(dat2, type = "USER", contrast = cont)
+	return(pdat)
+}
