@@ -23,14 +23,11 @@ This function is a conveniant shortcut for importing taxon-by-character matrices
 \examples{
 ## Load data
 data(KeatingDonoghue)
-
 ## write as csv file
 write.csv(KeatingDonoghue, file = "temp.csv")
-
 ## Import using the function
 phy_dat <- csv_to_phyDat(file = "temp.csv", row.names = 1)
 phy_dat
-
 ## delete temporary csv
 file.remove("temp.csv")
 

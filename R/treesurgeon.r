@@ -1842,8 +1842,6 @@ loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
 }
 
 
-
-
 #' Comma-seperated values to phyDat
 #'
 #' Function to convert a taxon-by-character matrix csv file into a phyDat object 
@@ -1854,14 +1852,11 @@ loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
 #' @examples
 #' ## Load data
 #' data(KeatingDonoghue)
-#' 
 #' ## write as csv file
 #' write.csv(KeatingDonoghue, file = "temp.csv")
-#' 
 #' ## Import using the function
 #' phy_dat <- csv_to_phyDat(file = "temp.csv", row.names = 1)
 #' phy_dat
-#' 
 #' ## delete temporary csv
 #' file.remove("temp.csv")
 #' 
@@ -1873,4 +1868,38 @@ csv_to_phyDat <- function(file, ...){
 	cont <- get_contrast(dat2)
 	pdat <- phyDat(dat2, type = "USER", contrast = cont)
 	return(pdat)
+}
+
+
+#' Quick Parsimony
+#'
+#' Function to conduct a quick and dirty parsimony search. Perfect for teaching.
+#' @param data 	An object of class phyDat containing characters.
+#' @param plot 	logical. If true, plots the most parsimonious tree.
+#' @param outgroup 	string that matches the taxon to root the tree on.
+#' @param ... Further arguments to be passed to pratchet(). 
+#' @return An object of class phylo.
+#' @details This function is designed for a quick and dirty parsimony search. It will use the default parameter of the phangorn function pratchet() for conducting a tree search. Users are advised to read the help page for pratchet if they wish to conduct a more exhaustive parsimony search. Other alternatives are availible (e.g. TreeSearch).   
+#' @examples
+#' ## Load data
+#' data(KeatingDonoghue)
+#' ## convert to phyDat
+#' cont <- get_contrast(KeatingDonoghue)
+#' pdat <- phyDat(KeatingDonoghue, type = "USER", contrast = cont)
+#' ## Run a quick parsimony search
+#' tree <- quick_pars(pdat)
+#' 
+#' #' @export 
+#' 
+quick_pars <- function(data, plot = T, outgroup, ...){
+	dm <- dist.hamming(data)
+	tree <- NJ(dm)
+	treeSPR <- optim.parsimony(tree, data)
+	treeRatchet <- pratchet(data, start=treeSPR, ...)
+	treeRatchet <- root(treeRatchet, outgroup = outgroup)
+	treeRatchet <- ladderize(treeRatchet)
+	if(plot == T){
+		plot(treeRatchet, cex = 0.5, no.margin = T)
+	}
+	return(treeRatchet)
 }
