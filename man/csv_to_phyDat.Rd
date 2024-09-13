@@ -31,6 +31,4 @@ phy_dat
 ## delete temporary csv
 file.remove("temp.csv")
 
-#' @export 
-
 }

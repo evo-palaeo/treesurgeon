@@ -1860,7 +1860,7 @@ loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
 #' ## delete temporary csv
 #' file.remove("temp.csv")
 #' 
-#' #' @export 
+#' @export 
 #' 
 csv_to_phyDat <- function(file, ...){
 	dat <- read.csv(file, ...)
@@ -1889,7 +1889,7 @@ csv_to_phyDat <- function(file, ...){
 #' ## Run a quick parsimony search
 #' tree <- quick_pars(pdat, plot = T, outgroup = "Cephalochordata")
 #' 
-#' #' @export 
+#' @export 
 #' 
 quick_pars <- function(data, outgroup = 1, plot = T, ...){
 	dm <- dist.hamming(data)

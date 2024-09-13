@@ -33,6 +33,4 @@ pdat <- phyDat(KeatingDonoghue, type = "USER", contrast = cont)
 ## Run a quick parsimony search
 tree <- quick_pars(pdat, plot = T, outgroup = "Cephalochordata")
 
-#' @export 
-
 }
