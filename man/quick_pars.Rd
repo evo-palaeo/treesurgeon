@@ -4,14 +4,14 @@
 \alias{quick_pars}
 \title{Quick Parsimony}
 \usage{
-quick_pars(data, plot = T, outgroup, ...)
+quick_pars(data, outgroup = 1, plot = T, ...)
 }
 \arguments{
 \item{data}{An object of class phyDat containing characters.}
 
-\item{plot}{logical. If true, plots the most parsimonious tree.}
-
 \item{outgroup}{string that matches the taxon to root the tree on.}
+
+\item{plot}{logical. If true, plots the most parsimonious tree.}
 
 \item{...}{Further arguments to be passed to pratchet().}
 }
@@ -31,7 +31,7 @@ data(KeatingDonoghue)
 cont <- get_contrast(KeatingDonoghue)
 pdat <- phyDat(KeatingDonoghue, type = "USER", contrast = cont)
 ## Run a quick parsimony search
-tree <- quick_pars(pdat)
+tree <- quick_pars(pdat, plot = T, outgroup = "Cephalochordata")
 
 #' @export 
 

@@ -1875,8 +1875,8 @@ csv_to_phyDat <- function(file, ...){
 #'
 #' Function to conduct a quick and dirty parsimony search. Perfect for teaching.
 #' @param data 	An object of class phyDat containing characters.
-#' @param plot 	logical. If true, plots the most parsimonious tree.
 #' @param outgroup 	string that matches the taxon to root the tree on.
+#' @param plot 	logical. If true, plots the most parsimonious tree.
 #' @param ... Further arguments to be passed to pratchet(). 
 #' @return An object of class phylo.
 #' @details This function is designed for a quick and dirty parsimony search. It will use the default parameter of the phangorn function pratchet() for conducting a tree search. Users are advised to read the help page for pratchet if they wish to conduct a more exhaustive parsimony search. Other alternatives are availible (e.g. TreeSearch).   
@@ -1887,11 +1887,11 @@ csv_to_phyDat <- function(file, ...){
 #' cont <- get_contrast(KeatingDonoghue)
 #' pdat <- phyDat(KeatingDonoghue, type = "USER", contrast = cont)
 #' ## Run a quick parsimony search
-#' tree <- quick_pars(pdat)
+#' tree <- quick_pars(pdat, plot = T, outgroup = "Cephalochordata")
 #' 
 #' #' @export 
 #' 
-quick_pars <- function(data, plot = T, outgroup, ...){
+quick_pars <- function(data, outgroup = 1, plot = T, ...){
 	dm <- dist.hamming(data)
 	tree <- NJ(dm)
 	treeSPR <- optim.parsimony(tree, data)
