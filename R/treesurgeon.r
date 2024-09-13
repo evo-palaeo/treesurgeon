@@ -1868,8 +1868,7 @@ loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
 #' #' @export 
 #' 
 csv_to_phyDat <- function(file, ...){
-	args.x <- list(...)
-	dat <- read.csv(file, args.x)
+	dat <- read.csv(file, ...)
 	dat2 <- as.matrix(dat)
 	cont <- get_contrast(dat2)
 	pdat <- phyDat(dat2, type = "USER", contrast = cont)
