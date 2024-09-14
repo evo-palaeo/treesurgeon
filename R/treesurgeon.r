@@ -1897,7 +1897,12 @@ quick_pars <- function(data, outgroup = 1, plot = T, ...){
 	treeSPR <- optim.parsimony(tree, data)
 	treeRatchet <- pratchet(data, start=treeSPR, ...)
 	treeRatchet <- root(treeRatchet, outgroup = outgroup)
-	treeRatchet <- ladderize(treeRatchet)
+	if(class(tree) == "multiPhylo"){
+		tree <- lapply(tree, ladderize)
+		class(tree) <- "multiPhylo"
+	} else {
+		treeRatchet <- ladderize(treeRatchet)
+	}
 	if(plot == T){
 		plot(treeRatchet, cex = 0.5, no.margin = T)
 	}
