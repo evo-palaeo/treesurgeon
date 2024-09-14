@@ -1844,11 +1844,11 @@ loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
 
 #' Comma-seperated values to phyDat
 #'
-#' Function to convert a taxon-by-character matrix csv file into a phyDat object 
+#' Function to convert a taxon-by-character matrix of categorical data in csv format into a phyDat object 
 #' @param file the name of the file which the data are to be read from.
-#' @param ... Further arguments to be passed to read.csv. 
+#' @param ... Further arguments to be passed to read.csv(). 
 #' @return An object of class phyDat.
-#' @details This function is a conveniant shortcut for importing taxon-by-character matrices saved as CSV files and converting them directly into phyDat objects. Tokens are interpreted using the treesurgeon function get_contrast().  
+#' @details This function is a conveniant shortcut for importing a taxon-by-character matrix of categorical data saved as a csv file and converting it directly into phyDat objects. Categorical tokens (e.g. 0, 1, 2... -, ?) are interpreted using the treesurgeon function get_contrast().  
 #' @examples
 #' ## Load data
 #' data(KeatingDonoghue)

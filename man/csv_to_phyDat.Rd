@@ -9,16 +9,16 @@ csv_to_phyDat(file, ...)
 \arguments{
 \item{file}{the name of the file which the data are to be read from.}
 
-\item{...}{Further arguments to be passed to read.csv.}
+\item{...}{Further arguments to be passed to read.csv().}
 }
 \value{
 An object of class phyDat.
 }
 \description{
-Function to convert a taxon-by-character matrix csv file into a phyDat object
+Function to convert a taxon-by-character matrix of categorical data in csv format into a phyDat object
 }
 \details{
-This function is a conveniant shortcut for importing taxon-by-character matrices saved as CSV files and converting them directly into phyDat objects. Tokens are interpreted using the treesurgeon function get_contrast().
+This function is a conveniant shortcut for importing a taxon-by-character matrix of categorical data saved as a csv file and converting it directly into phyDat objects. Categorical tokens (e.g. 0, 1, 2... -, ?) are interpreted using the treesurgeon function get_contrast().
 }
 \examples{
 ## Load data
