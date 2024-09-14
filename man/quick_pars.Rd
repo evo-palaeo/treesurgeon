@@ -22,7 +22,7 @@ An object of class phylo.
 Function to conduct a quick and dirty parsimony search. Perfect for teaching.
 }
 \details{
-This function is designed for a quick and dirty parsimony search. It will use the default parameter of the phangorn function pratchet() for conducting a tree search. Users are advised to read the help page for pratchet if they wish to conduct a more exhaustive parsimony search. Other alternatives are availible (e.g. TreeSearch).
+This function is designed for a quick and dirty parsimony search. It will use the default parameters of the phangorn function pratchet() for conducting a tree search. Users are advised to read the help page for phangorn::pratchet if they wish to conduct a more exhaustive parsimony search. Other alternatives are availible (e.g. TreeSearch).
 }
 \examples{
 ## Load data

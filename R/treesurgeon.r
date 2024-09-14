@@ -1879,7 +1879,7 @@ csv_to_phyDat <- function(file, ...){
 #' @param plot 	logical. If true, plots the most parsimonious tree.
 #' @param ... Further arguments to be passed to pratchet(). 
 #' @return An object of class phylo.
-#' @details This function is designed for a quick and dirty parsimony search. It will use the default parameter of the phangorn function pratchet() for conducting a tree search. Users are advised to read the help page for pratchet if they wish to conduct a more exhaustive parsimony search. Other alternatives are availible (e.g. TreeSearch).   
+#' @details This function is designed for a quick and dirty parsimony search. It will use the default parameters of the phangorn function pratchet() for conducting a tree search. Users are advised to read the help page for phangorn::pratchet if they wish to conduct a more exhaustive parsimony search. Other alternatives are availible (e.g. TreeSearch).   
 #' @examples
 #' ## Load data
 #' data(KeatingDonoghue)
