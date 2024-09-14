@@ -1896,13 +1896,13 @@ quick_pars <- function(data, outgroup = 1, plot = T, ...){
 	tree <- NJ(dm)
 	treeSPR <- optim.parsimony(tree, data)
 	treeRatchet <- pratchet(data, start=treeSPR, ...)
-	if(class(tree) == "multiPhylo"){
-		tree <- lapply(tree, function(x){ 
+	if(class(treeRatchet) == "multiPhylo"){
+		treeRatchet <- lapply(treeRatchet, function(x){ 
 			tree_x <- ladderize(x)
-			tree_x <- root(treeRatchet, outgroup = outgroup)
+			tree_x <- root(tree_x, outgroup = outgroup)
 			tree_x
 		})
-		class(tree) <- "multiPhylo"
+		class(treeRatchet) <- "multiPhylo"
 	} else {
 		treeRatchet <- ladderize(treeRatchet)
 		treeRatchet <- root(treeRatchet, outgroup = outgroup)
