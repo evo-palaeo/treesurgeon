@@ -15,7 +15,7 @@ csv_to_phyDat(file, ...)
 An object of class phyDat.
 }
 \description{
-Function to convert a taxon-by-character matrix of categorical data in csv format into a phyDat object
+Function to convert a taxon-by-character matrix of categorical data in csv format into a phyDat object.
 }
 \details{
 This function is a conveniant shortcut for importing a taxon-by-character matrix of categorical data saved as a csv file and converting it directly into phyDat objects. Categorical tokens (e.g. 0, 1, 2... -, ?) are interpreted using the treesurgeon function get_contrast().

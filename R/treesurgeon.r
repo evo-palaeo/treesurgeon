@@ -339,10 +339,10 @@ read_nexdat <- function (file, use.part.info = F)
 #' library(phangorn)
 #' data("Laurasiatherian")
 #' x <- phyDat_to_nexdat(Laurasiatherian)
-#' @export
+#' @export 
 
 phyDat_to_nexdat<- function(x){
-	if(class(x) != "phyDat"){
+	if(any(class(x) != "phyDat")){
 		stop("data is not phyDat object!")
 	}
 	x.mat <-  as.character(x)
@@ -1789,10 +1789,11 @@ entropy <- function(x) {
 #' @param x a vector of tip values for species; names(x) should be the species names. 
 #' @param model a character string containing the model or a transition model specified in the form of a matrix. See ace for more details.
 #' @param fixedQ fixed value of transition matrix Q, if one is desired.
+#' @param tips Index of tips used for cross validation. By default this is set to include all tips of the tree.  
 #' @param type determines the reconstruction type. Either "joint" or "marginal".
 #' @param ... optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user. 
 #' @return A numeric vector reporting the mean Raw error, the Brier score and the mean log likelihood of the model.
-#' @details to do!
+#' @details This function performs leave-one-out cross-validation using phytools::fitMk() and phytools::ancr(). By default, the function iterates through each tip of the tree. In each iteration, one tip state is set as uncertain, and the user-defined model is fitted to the remaining data using phytools::fitMk(). Ancestral states, including the uncertain tip state, are then estimated using phytools::ancr() with the 'tips' argument set to TRUE. The estimated uncertain tip state is compared to the true state, and both the Raw error and Brier score are recorded. Once all iterations are complete, the function returns the mean Raw error and mean Brier score for tip estimates, and the mean log likelihood of the model. Optionally, the function can be applied to a subset of tips rather than the full dataset using the tips argument.
 #' @examples
 #' ## Load data
 #' head(vert_data$morph)
@@ -1811,7 +1812,7 @@ entropy <- function(x) {
 
 #' @export 
 
-loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
+loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, tips = seq(Ntip(tree)), type="marginal", ...){
 	if(any(c("joint", "marginal") == type) == F){
 		stop("type must be either 'joint' or 'marginal'!")
 	}
@@ -1826,7 +1827,7 @@ loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, type="marginal", ...){
     	m <- ncol(x)
     	states <- colnames(x)
 	}
-	res <- foreach::foreach(i = 1:nrow(x), .combine = 'cbind')%dopar% {
+	res <- foreach::foreach(i = tips, .combine = 'cbind')%dopar% {
     	true_state <- x[i,]
     	x2 <- x
     	x2[i,] <- 1

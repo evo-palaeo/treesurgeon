@@ -4,7 +4,15 @@
 \alias{loo_cv}
 \title{Leave-One-Out Cross-Validation}
 \usage{
-loo_cv(tree, x, model = "ER", fixedQ = NULL, type = "marginal", ...)
+loo_cv(
+  tree,
+  x,
+  model = "ER",
+  fixedQ = NULL,
+  tips = seq(Ntip(tree)),
+  type = "marginal",
+  ...
+)
 }
 \arguments{
 \item{tree}{an object of class 'phylo'.}
@@ -14,6 +22,8 @@ loo_cv(tree, x, model = "ER", fixedQ = NULL, type = "marginal", ...)
 \item{model}{a character string containing the model or a transition model specified in the form of a matrix. See ace for more details.}
 
 \item{fixedQ}{fixed value of transition matrix Q, if one is desired.}
+
+\item{tips}{Index of tips used for cross validation. By default this is set to include all tips of the tree.}
 
 \item{type}{determines the reconstruction type. Either "joint" or "marginal".}
 
@@ -26,7 +36,7 @@ A numeric vector reporting the mean Raw error, the Brier score and the mean log 
 Function to conduct leave-one-out cross-validation on an ancestral state estimation model.
 }
 \details{
-to do!
+This function performs leave-one-out cross-validation using phytools::fitMk() and phytools::ancr(). By default, the function iterates through each tip of the tree. In each iteration, one tip state is set as uncertain, and the user-defined model is fitted to the remaining data using phytools::fitMk(). Ancestral states, including the uncertain tip state, are then estimated using phytools::ancr() with the 'tips' argument set to TRUE. The estimated uncertain tip state is compared to the true state, and both the Raw error and Brier score are recorded. Once all iterations are complete, the function returns the mean Raw error and mean Brier score for tip estimates, and the mean log likelihood of the model. Optionally, the function can be applied to a subset of tips rather than the full dataset using the tips argument.
 }
 \examples{
 ## Load data
