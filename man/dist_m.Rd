@@ -23,6 +23,8 @@ Function to calculate tree to tree distances in parallel using the foreach packa
 }
 \details{
 This function uses the foreach package to calculate tree to tree distances in parallel. Foreach allows for parallel computation of matrices, however tree to tree distance matrices are symmetrical, thus simply using foreach to calculate each cell of the matrix would result in 50 percent redundancy. To lower the amount of redundancy, the function splits the square matrix into a user specifed number of rectangular matrices (using the argument 'slices'). These are dealt with in serial, but each value of the rectangular matrices is computed in parallel. For example, if length(trees) == 99, and slices == 3, the function will split the calculation into three submatrices x[1:33, 1:99], x[34:66, 34:99] and x[67:99, 67:99]. This lowers the redundancy from 50 percent to less than 25 percent. In theory, tree distance matrices can be computed without any redundancy, for example using the future.apply package. However, in practice, I have found this to be nowhere near as fast. Whether or not the dist_m() function is faster than computing the distances in serial depends on a number of factors including the number of trees, the number of tips, the complexity of the distance metric and the number of availible cores. In general, this function is recommended for computing distances between > 1000 trees. The ideal number of slices is difficult to determine. A greater number of slices decreases redundancy but increases the number of serial operations. In general, I recommend setting slices to 3.
+}
+\examples{
 ## simulate two groups of trees
 t1 <- rtree(40)
 trees1 <- t1
@@ -58,4 +60,5 @@ sum_res <- summary(pca_res)
 fviz_eig(pca_res, addlabels=TRUE, hjust = -0.3)
 ## plot PCA results
 ggplot(pca_res$x, aes(PC1, PC2)) + geom_point(alpha = 0.4, size = 2) +  xlab(paste("PC1 = ", sum_res$importance[2,1], sep = "")) + ylab(paste("PC2 = ", sum_res$importance[2,2], sep = "")) + theme_minimal()
+
 }
