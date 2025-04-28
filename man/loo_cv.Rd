@@ -28,7 +28,7 @@ loo_cv(
 
 \item{type}{determines the reconstruction type. Either "joint" or "marginal".}
 
-\item{drop.tip}{Logical. If TRUE, tip is dropped during model fitting.}
+\item{drop.tip}{logical. If TRUE, tip is dropped during model fitting.}
 
 \item{...}{optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user.}
 }
@@ -39,7 +39,7 @@ A numeric vector reporting the mean Raw error, the Brier score and the mean log 
 Function to conduct leave-one-out cross-validation on an ancestral state estimation model.
 }
 \details{
-This function performs leave-one-out cross-validation using phytools::fitMk() and phytools::ancr(). By default, the function iterates through each tip of the tree. In each iteration, one tip state is set as uncertain, and the user-defined model is fitted to the remaining data using phytools::fitMk(). Ancestral states, including the uncertain tip state, are then estimated using phytools::ancr() with the 'tips' argument set to TRUE. The estimated uncertain tip state is compared to the true state, and both the Raw error and Brier score are recorded. Once all iterations are complete, the function returns the mean Raw error and mean Brier score for tip estimates, and the mean log likelihood of the model. Optionally, the function can be applied to a subset of tips rather than the full dataset using the tips argument.
+This function performs leave-one-out cross-validation using phytools::fitMk() and phytools::ancr(). By default, it iterates over each tip in the phylogenetic tree. In each iteration, the model is fitted after pruning the selected tip from the tree. The tip is then reintroduced with its state set as uncertain, and ancestral states — including the uncertain tip — are re-estimated using phytools::ancr() with the tips = TRUE option. The predicted state for the uncertain tip is compared to its true state, and the Raw error, Brier score, and log-likelihood are recorded. After completing all iterations, the function returns the mean Raw error, mean Brier score, and mean log-likelihood across all tips. Optionally, cross-validation can be restricted to a subset of tips by specifying the tips argument. If drop.tip is set to FALSE, the model is instead fitted to the full tree with the tip's state made uncertain, without pruning the tip from the tree.
 }
 \examples{
 ## Load data
