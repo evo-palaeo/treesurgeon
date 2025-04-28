@@ -1792,6 +1792,7 @@ entropy <- function(x) {
 #' @param fixedQ fixed value of transition matrix Q, if one is desired.
 #' @param tips Index of tips used for cross validation. By default this is set to include all tips of the tree.  
 #' @param type determines the reconstruction type. Either "joint" or "marginal".
+#' @param drop.tip Logical. If TRUE, tip is dropped during model fitting. 
 #' @param ... optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user. 
 #' @return A numeric vector reporting the mean Raw error, the Brier score and the mean log likelihood of the model.
 #' @details This function performs leave-one-out cross-validation using phytools::fitMk() and phytools::ancr(). By default, the function iterates through each tip of the tree. In each iteration, one tip state is set as uncertain, and the user-defined model is fitted to the remaining data using phytools::fitMk(). Ancestral states, including the uncertain tip state, are then estimated using phytools::ancr() with the 'tips' argument set to TRUE. The estimated uncertain tip state is compared to the true state, and both the Raw error and Brier score are recorded. Once all iterations are complete, the function returns the mean Raw error and mean Brier score for tip estimates, and the mean log likelihood of the model. Optionally, the function can be applied to a subset of tips rather than the full dataset using the tips argument.
@@ -1810,36 +1811,54 @@ entropy <- function(x) {
 ## Compare mean error of ER and ARD models using loo_cv.
 #' loo_cv(tree = vert_data, x = tp[[1]], model = "ER")
 #' loo_cv(tree = vert_data, x = tp[[1]], model = "ARD")
+#' stopCluster(cl)
 
 #' @export 
 
-loo_cv <- function(tree, x, model = "ER", fixedQ=NULL, tips = seq(Ntip(tree)), type="marginal", ...){
-	if(any(c("joint", "marginal") == type) == F){
-		stop("type must be either 'joint' or 'marginal'!")
-	}
-	args.x <- list(...)
-	if (is.matrix(x)) {
-    	x <- x[tree$tip.label, ]
-    	m <- ncol(x)
-    	states <- colnames(x)
-	} else {
-    	x <- to.matrix(x, sort(unique(x)))
-    	x <- x[tree$tip.label, ]
-    	m <- ncol(x)
-    	states <- colnames(x)
-	}
-	res <- foreach::foreach(i = tips, .combine = 'cbind')%dopar% {
-    	true_state <- x[i,]
-    	x2 <- x
-    	x2[i,] <- 1
-    	object <- fitMk(tree, x2, model, fixedQ=fixedQ, args.x)
-    	cv <- ancr(object, tips=TRUE, type = type)
-		if(is.matrix(cv$ace) == F){
-			cv$ace <- to.matrix(cv$ace, seq = object$states)
-		}
-    	c("Raw"= Raw(cv$ace[i,], true_state), "Brier" = Brier(cv$ace[i,], true_state), "mean logL" = object$logLik)
-	}
-	return(rowMeans(res))
+loo_cv <- function(tree, x, model = "ER", fixedQ = NULL, tips = seq(Ntip(tree)), type = "marginal", drop.tip = TRUE, ...) {
+  
+  if (!type %in% c("joint", "marginal")) {
+    stop("type must be either 'joint' or 'marginal'!")
+  }
+  
+  args.x <- list(...)
+  
+  if (!is.matrix(x)) {
+    x <- to.matrix(x, sort(unique(x)))
+  }
+  x <- x[tree$tip.label, ]
+  m <- ncol(x)
+  states <- colnames(x)
+  
+  res <- foreach::foreach(i = tips, .combine = "cbind", .packages = "treesurgeon") %dopar% {
+    x2 <- x
+    x2[i, ] <- 1  # Set tip state to uncertain
+    true_state <- x[i, ]
+    
+    if (drop.tip) {
+      tree_temp <- drop.tip(tree, tree$tip.label[i])
+      x_temp <- x[-i, , drop = FALSE]
+      object <- do.call(fitMk, c(list(tree = tree_temp, x = x_temp, model = model, fixedQ = fixedQ), args.x))
+      object$data <- x2
+      object$tree <- tree
+    } else {
+      object <- do.call(fitMk, c(list(tree = tree, x = x2, model = model, fixedQ = fixedQ), args.x))
+    }
+    
+    cv <- ancr(object, tips = TRUE, type = type)
+    
+    if (!is.matrix(cv$ace)) {
+      cv$ace <- to.matrix(cv$ace, seq_len(m))
+    }
+    
+    c(
+      Raw = Raw(cv$ace[i, ], true_state),
+      Brier = Brier(cv$ace[i, ], true_state),
+      `mean logL` = object$logLik
+    )
+  }
+  
+  rowMeans(res)
 }
 
 
