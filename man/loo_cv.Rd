@@ -11,6 +11,7 @@ loo_cv(
   fixedQ = NULL,
   tips = seq(Ntip(tree)),
   type = "marginal",
+  drop.tip = TRUE,
   ...
 )
 }
@@ -26,6 +27,8 @@ loo_cv(
 \item{tips}{Index of tips used for cross validation. By default this is set to include all tips of the tree.}
 
 \item{type}{determines the reconstruction type. Either "joint" or "marginal".}
+
+\item{drop.tip}{Logical. If TRUE, tip is dropped during model fitting.}
 
 \item{...}{optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user.}
 }
@@ -51,4 +54,5 @@ nc <- parallel::detectCores()
 doParallel::registerDoParallel(cores=nc)
 loo_cv(tree = vert_data, x = tp[[1]], model = "ER")
 loo_cv(tree = vert_data, x = tp[[1]], model = "ARD")
+stopCluster(cl)
 }
