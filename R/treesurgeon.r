@@ -2151,9 +2151,10 @@ anc_timeslice <- function(tree, x, anc = NULL, slices) {
 #' }
 #' 
 #' @examples
-#' set.seed(4)
+#' set.seed(109)
 #' tree <- sim_g_tree(b = 0.2, n = 10000, t = 200, ext = T, ext_t = 100, ext_s = 0.9)
 #' tree$edge.length <- unlist(lapply(tree$edge.length, function(x) x + runif(1, 0, 1)))
+#' tree <- treeSlice(tree, 190, orientation = "rootwards")
 #' tree$edge.length <- (tree$edge.length/max(node.depth.edgelength(tree))) * 100
 #' tree <- keep.tip(tree, sample(1:Ntip(tree), 50))
 #' tree <- ladderize(tree)
