@@ -2102,10 +2102,10 @@ anc_timeslice <- function(tree, x, anc = NULL, slices) {
 #' 
 #' @details This function expands on work by Quintero 2025. The calculation is as follows:
 #' 
-#' 1) Divide the tree into timeslices and estimate ancestral trait values:\n
+#' 1) Divide the tree into timeslices and estimate ancestral trait values: \cr 
 #' At each point where a timeslice intersects a branch (edge) of the tree, estimate the ancestral value of the trait. This is done using the anc_timeslice() function.
 #' 
-#' 2) Compute trait change per interval. For each time interval bounded by two timeslices (t0 and t1):
+#' 2) Compute trait change per interval. For each time interval bounded by two timeslices (t0 and t1): \cr 
 #' Compute the mean change in trait x. 
 #' Δx = mean(x_t1) - mean(x_t2)
 #' 
