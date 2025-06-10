@@ -17,21 +17,22 @@ sp_sorting(tree, x, anc = NULL, slices)
 }
 \value{
 Returns a data.frame "timeslice" containing the following columns:
-time: time since root node. 
-delta_x: mean change in trait x since previous timeslice.
-delta_xa: anagenic component of delta_x.
-delta_xe: extinction component of delta_x. 
-delta_xc: cladogenic component of delta_x.
-prop_xa: Proportion of total change in trait x since previous timeslice due to anagenesis.
-prop_xe: Proportion of total change in trait x since previous timeslice due to extinction.
-prop_xc: Proportion of total change in trait x since previous timeslice due to cladogenesis. 
-x: Mean value of trait x.
-xa: Mean value of trait x * prop_xa.
-xe: Mean value of trait x * prop_xe.
-xc: Mean value of trait x * prop_xc.
-xac: Mean value of trait x * (prop_xc + prop_xa).
-x_sd: Standard deviation of trait x. 
-
+\itemize{
+\item time: time since root node. 
+\item delta_x: mean change in trait x since previous timeslice.
+\item delta_xa: anagenic component of delta_x.
+\item delta_xe: extinction component of delta_x. 
+\item delta_xc: cladogenic component of delta_x.
+\item prop_xa: Proportion of total change in trait x since previous timeslice due to anagenesis.
+\item prop_xe: Proportion of total change in trait x since previous timeslice due to extinction.
+\item prop_xc: Proportion of total change in trait x since previous timeslice due to cladogenesis. 
+\item x: Mean value of trait x.
+\item xa: Mean value of trait x * prop_xa.
+\item xe: Mean value of trait x * prop_xe.
+\item xc: Mean value of trait x * prop_xc.
+\item xac: Mean value of trait x * (prop_xc + prop_xa).
+\item x_sd: Standard deviation of trait x. 
+}
 The function also produces a numeric vector "mean components" containing the mean values of prop_xa, prop_xe, prop_xc and prop_xac accross all timeslices.
 }
 \description{
@@ -52,31 +53,40 @@ This function expands on work by Quintero 2025. The calculation is as follows:
 }
  
 3) Identify edge types between timeslices:
-- Anagenetic edges: Present in both t0 and t1.
-- Cladogenetic edges: New edges appearing in t1 but not in t0. Pair each with its ancestral edge from t0.
-- Extinct edges: Present in t0 but missing in t1. Assign these a trait value at t1 equal to the mean of existing values at t1.
+\itemize{
+\item Anagenetic edges: Present in both t0 and t1.
+\item Cladogenetic edges: New edges appearing in t1 but not in t0. Pair each with its ancestral edge from t0.
+\item Extinct edges: Present in t0 but missing in t1. Assign these a trait value at t1 equal to the mean of existing values at t1.
+}
 
-4) Calculate trait differences per edge pair:
+4) Calculate trait differences per edge pair: \cr
 For each edge pair, calculate:
-d = x_t1 - x_t0
-Normalize these differences by dividing each d by the sum of all differences to get the proportion of total trait change attributed to each pair.
+\itemize{
+\item d = x_t1 - x_t0
+\item Normalize these differences by dividing each d by the sum of all differences to get the proportion of total trait change attributed to each pair.
+}
 
-5)
-Sum the proportional contributions of:
-Anagenesis: prop_xa
-Cladogenesis: prop_xc
-Extinction: prop_xe
+5) Sum the proportional contributions of:
+\itemize{
+\item Anagenesis: prop_xa
+\item Cladogenesis: prop_xc
+\item Extinction: prop_xe
+}
 
 6) Multiply the total mean trait change Δx by each of these proportions to compute:
-Anagenetic change: Δxa = Δx * prop_xa
-Cladogenic change: Δxc = Δx * prop_xc
-Extinction-related change: Δxe = Δx * prop_xe
+\itemize{
+\item Anagenetic change: Δxa = Δx * prop_xa
+\item Cladogenic change: Δxc = Δx * prop_xc
+\item Extinction-related change: Δxe = Δx * prop_xe
+}
 
 Interpretation:
-A sudden shift in trait x reflects a rapid change in its mean value. A positive shift indicates an abrupt increase in the mean, while a negative shift signals a decrease. If this shift aligns in direction with a change in one of the evolutionary components (anagenesis, cladogenesis, or extinction), it suggests that the component significantly contributed to the shift.
-- Extinction can drive sudden changes through species sorting—by selectively removing species from one end of the trait distribution, the mean shifts accordingly.
-- Cladogenesis can influence the mean by increasing the number of lineages at the extremes of the trait range, thereby pulling the average in that direction.
-- Anagenesis can produce a shift through consistent, directional evolution across all lineages over a short time period.
+A sudden shift in trait x reflects a rapid change in its mean value. A positive shift indicates an abrupt increase in the mean, while a negative shift signals a decrease. If this shift aligns in direction with a change in one of the evolutionary components (anagenesis, cladogenesis, or extinction), it suggests that the component significantly contributed to the shift. \cr
+\itemize{
+\item Extinction can drive sudden changes through species sorting—by selectively removing species from one end of the trait distribution, the mean shifts accordingly.
+\item Cladogenesis can influence the mean by increasing the number of lineages at the extremes of the trait range, thereby pulling the average in that direction.
+\item Anagenesis can produce a shift through consistent, directional evolution across all lineages over a short time period.
+}
 }
 \examples{
 set.seed(4)
