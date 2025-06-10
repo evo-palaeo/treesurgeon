@@ -2101,7 +2101,8 @@ anc_timeslice <- function(tree, x, anc = NULL, slices) {
 #' The function also produces a numeric vector "mean components" containing the mean values of prop_xa, prop_xe, prop_xc and prop_xac accross all timeslices.
 #' 
 #' @details This function expands on work by Quintero 2025. The calculation is as follows:
-#' 1) Divide the tree into timeslices and estimate ancestral trait values:
+#' 
+#' 1) Divide the tree into timeslices and estimate ancestral trait values:\n
 #' At each point where a timeslice intersects a branch (edge) of the tree, estimate the ancestral value of the trait. This is done using the anc_timeslice() function.
 #' 
 #' 2) Compute trait change per interval. For each time interval bounded by two timeslices (t0 and t1):

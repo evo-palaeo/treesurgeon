@@ -39,7 +39,8 @@ Function that calculates the average change in a continuous trait through time f
 }
 \details{
 This function expands on work by Quintero 2025. The calculation is as follows:
-1) Divide the tree into timeslices and estimate ancestral trait values:
+
+1) Divide the tree into timeslices and estimate ancestral trait values:\n
 At each point where a timeslice intersects a branch (edge) of the tree, estimate the ancestral value of the trait. This is done using the anc_timeslice() function.
 
 2) Compute trait change per interval. For each time interval bounded by two timeslices (t0 and t1):
