@@ -1932,3 +1932,316 @@ quick_pars <- function(data, outgroup = 1, plot = T, ...){
 	}
 	return(treeRatchet)
 }
+
+#' Add Zero Edges
+#'
+#' Function to add zero length edges to nodes of a phylo object. 
+#' @param tree 	an object of class 'phylo'.
+#' @param node 	integer object specifying nodes to add zero-length edges to, where 1 = root. 
+#' @return An object of class phylo.
+#' @details This function adds zero-length edges to a user-specified set of internal nodes of a phylo object (defualt = all internal nodes). This is useful if you need to constrain internal nodes to a particular state during ancestral state estimation. 
+#' @examples
+#' t1 <- rtree(10)
+#' par(mfrow = c(2, 1))
+#' plot(t1, no.margin = T)
+#' t2 <- add_zero_edges(t1)
+#' plot(t2, no.margin = T)
+#' par(mfrow = c(1, 1))
+#' 
+#' @export 
+
+add_zero_edges <- function(tree, node = 1:Nnode(tree)) {
+    for (i in node) {
+        tree <- bind.tip(tree = tree, tip.label = paste("XXXXXX_", i, sep = ""), edge.length = 0, where = i + Ntip(tree), position = 0)
+    }
+    return(tree)
+}
+
+#' Get Descendant Edges
+#'
+#' Function that, for each edge in a phylo object, returns a vector of descendant edges.
+#' @param tree 	an object of class 'phylo'.
+#' @param current logical. If true, returns current edge in list of descendants. 
+#' @return a list of length = Nedge(tree) containing the edge indices of each edge descending from edge = i. 
+#' @details Internal function used in anc_timeslice().  
+#' @examples
+#' t1 <- rtree(10)
+#' get_descendant_edges(t1)
+#' 
+#' @export 
+
+get_descendant_edges <- function(tree, current = T) {
+  edge_matrix <- tree$edge
+  n <- nrow(edge_matrix)
+  res <- list()
+  for(i in 1:n){
+    anc_node <- edge_matrix[i, 1]
+    dec_nodes <- unlist(Descendants(node = anc_node, x = tree, type = "all"))
+    dec_edges <- which(edge_matrix[,1] %in% dec_nodes)
+	U_dec_edges <-  unique(dec_edges)
+	if(current == T){
+		U_dec_edges <- c(U_dec_edges, i)
+	}
+    res[[i]] <- U_dec_edges
+  }
+  names(res) <- 1:n
+  return(res)
+}
+
+#' Anc timeslice
+#'
+#' Function that estimates ancestral trait values along each edge of a phylogenetic tree, based on a continuous trait and a user-specified number of time slices.
+#' @param tree 	an object of class 'phylo'.
+#' @param x vector of tip values for species; names(x) should be the species names. 
+#' @param anc vector of internal node values. If not specified, these will be estimated using BM. 
+#' @param slices integer specifying the number of timeslices to use.
+#' @return Returns a list of length slices + 1, containing the trait value at the root and for each edge intersecting each timeslice.  
+#' @details Modified from phytools blog: see https://blog.phytools.org/2017/01/extracting-reconstructed-trait-values.html. If node values are suplied using the 'anc' argument, internal node values are fixed using add_zero_edges(). The function then uses phytools::fastAnc to interpolate between fixed node values.     
+#' @examples
+#' t1 <- pbtree(n = 10)
+#' ## Simulate trait
+#' x <- fastBM(t1)
+#' anc_timeslice(t1, x, slices = 10)
+#' @export 
+
+anc_timeslice <- function(tree, x, anc = NULL, slices) {
+    x2 <- x
+    tree2 <- tree
+    slices2 <- slices - 1
+    if (is.null(tree2$edge.length)) {
+        stop("tree does not have edge lengths!")
+    }
+    if (is.null(names(x))) {
+        names(x) <- tree2$tip.label
+        warning("tip state have no names! Assuming order matches tree2$tip.label")
+    }
+	if(is.null(anc)){
+		x2 <- x
+		tree2 <- tree
+		anc <- fastAnc(tree, x)
+	} else {
+		names(anc) <- paste("XXXXXX_", rep(1:Nnode(tree2)), sep = "")
+    	x2 <- c(x2, anc)
+   		tree2 <- add_zero_edges(tree2)
+    	x2 <- x2[match(tree2$tip.label, names(x2))]
+	}
+    H <- nodeHeights(tree2)
+    H <- round(H, 5) # round node heights to make sure extant tips are at the same height
+    tslice <- max(H) / (slices2 + 1)
+    res <- list()
+    for (i in 1:slices2) {
+        # bit from phytools blog
+        t <- tslice * i
+        ii <- intersect(which(H[, 1] <= t), which(H[, 2] > t)) # cant intersect with zero length branches
+        node <- tree2$edge[ii, 2]
+        position <- t - H[ii, 1]
+        rerooted <- mapply(reroot,
+            node = node, position = position,
+            MoreArgs = list(tree = tree2), SIMPLIFY = FALSE
+        )
+        foo <- function(ind, tree2) paste(tree2$edge[ind, ], collapse = ",")
+        res[[i]] <- setNames(
+            sapply(rerooted, function(t, x) fastAnc(t, x)[1], x = x2),
+            sapply(ii, foo, tree = tree2)
+        )
+    }
+    # rename edges
+    for (i in 1:length(res)) {
+        for (j in 1:length(res[[i]])) {
+            y <- names(res[[i]])[[j]]
+            y_nodes <- as.numeric(strsplit(y, ",", fixed = TRUE)[[1]])
+            for (k in 1:2) {
+                y_tips <- tree2$tip.label[Descendants(tree2, y_nodes[[k]], type = "tips")[[1]]]
+                temps <- grep("XXXXXX_", y_tips)
+                if (length(temps) > 0) {
+                    y_tips <- y_tips[-temps]
+                }
+                if (length(y_tips) > 1) {
+                    y_nodes[[k]] <- mrca.phylo(tree, node = y_tips)
+                } else {
+                    y_nodes[[k]] <- which(tree$tip.label %in% y_tips)
+                }
+            }
+            names(res[[i]])[[j]] <- which(tree$edge[,1] == y_nodes[[1]] & tree$edge[,2] == y_nodes[[2]])
+        }
+    }
+    res <- c(root = anc[[1]], res, tips = list(x2[tree2$edge[which(H[, 2] == max(H[, 2])), 2]]))
+    names(res$tips) <- unlist(lapply(names(res$tips), function(x){
+        tipID <- which(tree$tip.label == x)
+        edgeID <- which(tree$edge[,2] == tipID)
+        edgeID 
+    }))
+    names(res) <- 0:(slices2+1)
+    return(res)
+}
+
+#' Species Sorting
+#'
+#' Function that calculates the average change in a continuous trait through time for a given tree, and partitions this change into contributions from evolution and extinction. 
+#' @param tree 	an object of class 'phylo'.
+#' @param x vector of tip values for species; names(x) should be the species names. 
+#' @param anc vector of internal node values. If not specified, these will be estimated using BM. 
+#' @param slices integer specifying the number of timeslices to use.
+#' @return Returns a data.frame "timeslice" containing the following columns:
+#' time: time since root node. 
+#' delta_x: mean change in trait x since previous timeslice.
+#' delta_xa: anagenic component of delta_x.
+#' delta_xe: extinction component of delta_x. 
+#' delta_xc: cladogenic component of delta_x.
+#' prop_xa: Proportion of total change in trait x since previous timeslice due to anagenesis.
+#' prop_xe: Proportion of total change in trait x since previous timeslice due to extinction.
+#' prop_xc: Proportion of total change in trait x since previous timeslice due to cladogenesis. 
+#' x: Mean value of trait x.
+#' xa: Mean value of trait x * prop_xa.
+#' xe: Mean value of trait x * prop_xe.
+#' xc: Mean value of trait x * prop_xc.
+#' xac: Mean value of trait x * (prop_xc + prop_xa).
+#' x_sd: Standard deviation of trait x. 
+#' 
+#' The function also produces a numeric vector "mean components" containing the mean values of prop_xa, prop_xe, prop_xc and prop_xac accross all timeslices.
+#' 
+#' @details This function expands on work by Quintero 2025. The calculation is as follows:
+#' 1) Divide the tree into timeslices and estimate ancestral trait values:
+#' At each point where a timeslice intersects a branch (edge) of the tree, estimate the ancestral value of the trait. This is done using the anc_timeslice() function.
+#' 
+#' 2) Compute trait change per interval. For each time interval bounded by two timeslices (t0 and t1):
+#' Compute the mean change in trait x. 
+#' Δx = mean(x_t1) - mean(x_t2)
+#' 
+#' 3) Identify edge types between timeslices:
+#' - Anagenetic edges: Present in both t0 and t1.
+#' - Cladogenetic edges: New edges appearing in t1 but not in t0. Pair each with its ancestral edge from t0.
+#' - Extinct edges: Present in t0 but missing in t1. Assign these a trait value at t1 equal to the mean of existing values at t1.
+#' 
+#' 4) Calculate trait differences per edge pair:
+#' For each edge pair, calculate:
+#' d = x_t1 - x_t0
+#' Normalize these differences by dividing each d by the sum of all differences to get the proportion of total trait change attributed to each pair.
+#' 
+#' 5)
+#' Sum the proportional contributions of:
+#' Anagenesis: prop_xa
+#' Cladogenesis: prop_xc
+#' Extinction: prop_xe
+#' 
+#' 6) Multiply the total mean trait change Δx by each of these proportions to compute:
+#' Anagenetic change: Δxa = Δx * prop_xa
+#' Cladogenic change: Δxc = Δx * prop_xc
+#' Extinction-related change: Δxe = Δx * prop_xe
+#' 
+#' Interpretation:
+#' A sudden shift in trait x reflects a rapid change in its mean value. A positive shift indicates an abrupt increase in the mean, while a negative shift signals a decrease. If this shift aligns in direction with a change in one of the evolutionary components (anagenesis, cladogenesis, or extinction), it suggests that the component significantly contributed to the shift.
+#' - Extinction can drive sudden changes through species sorting—by selectively removing species from one end of the trait distribution, the mean shifts accordingly.
+#' - Cladogenesis can influence the mean by increasing the number of lineages at the extremes of the trait range, thereby pulling the average in that direction.
+#' - Anagenesis can produce a shift through consistent, directional evolution across all lineages over a short time period.
+#' 
+#' @examples
+#' set.seed(4)
+#' tree <- sim_g_tree(b = 0.2, n = 10000, t = 200, ext = T, ext_t = 100, ext_s = 0.9)
+#' tree$edge.length <- unlist(lapply(tree$edge.length, function(x) x + runif(1, 0, 1)))
+#' tree$edge.length <- (tree$edge.length/max(node.depth.edgelength(tree))) * 100
+#' tree <- keep.tip(tree, sample(1:Ntip(tree), 50))
+#' tree <- ladderize(tree)
+#' tree$edge.length <- (tree$edge.length/max(node.depth.edgelength(tree))) * 100
+#' x <- fastBM(tree, a = 10, mu = 0.2)
+#' par(mfrow = c(2, 1))
+#' par(mar = c(2, 4.2, 0.5, 1))
+#' phenogram(tree = tree, x, ftype = "off", xlab = "", ylab = "Trait_x")
+#' res <- sp_sorting(tree, x, anc = NULL, 100)
+#' par(mar = c(4.2, 4.2, 0.5, 1))
+#' plot_range <- na.omit((unlist(res$timeslice[,9:13])))
+#' plot(0:100, 0:100, type = "n", xlim = c(0, max(res$timeslice$time)), ylim = c(min(plot_range), max(plot_range)), xlab = "Time", ylab = "Trait_x")
+#' lines(res$timeslice$time, res$timeslice$x, type = "l", col = "red")
+#' lines(res$timeslice$time, res$timeslice$xac, type = "l", col = "blue")
+#' lines(res$timeslice$time, res$timeslice$xe, type = "l", col = "orange")
+#' legend("topleft", legend=c("x", "xac", "xe"), col=c("red", "blue", "orange"), lty=1, cex=0.8, box.lty=0, inset = 0.001)
+#' par(mfrow = c(1, 1))
+#' @export 
+
+sp_sorting <- function(tree, x, anc = NULL, slices) {
+    tslice <- anc_timeslice(tree, x, anc, slices)
+	root_x <- tslice[[1]]
+    desc_edges <- get_descendant_edges(tree)
+    res <- data.frame()
+    for (i in 2:(length(tslice))) {
+        # calculate mean change
+        x_t0 <- tslice[[i-1]]
+        x_t1 <- tslice[[i]]
+        delta_x <- mean(x_t1) - mean(x_t0)
+        # calculate change due to anagenesis, cladogenesis and extinction
+
+        delta_x <- mean(x_t1) - mean(x_t0)
+        if (i == 2) {
+            n <- 1
+            edge_list <- vector("list", n)
+            edge_list[[i]] <- x_t1
+            names(edge_list) <- 0
+        } else {
+            edge_id <- as.numeric(names(x_t0))
+            n <- length(edge_id)
+            edge_list <- vector("list", n)
+            names(edge_list) <- edge_id
+            for(j in 1:n){
+                desc_edges_all <- desc_edges[[edge_id[[j]]]]
+                edge_list[[j]] <- x_t1[which(names(x_t1) %in% desc_edges_all)]
+            }
+        }
+        extinct <- which(unlist(lapply(edge_list, function(x) length(x) == 0)))
+
+        edge_list[extinct] <- NA
+        edge_list2 <- edge_list
+        edge_list2[extinct] <- mean(na.omit(unlist(edge_list2))) # extinct taxa descendant value = mean of x_t1 
+        diff <- lapply(1:n, function(x) edge_list2[[x]] - x_t0[[x]])
+        diff_sum <- sum(unlist(diff))
+        if(diff_sum != 0){ # if diff between t0 and t1 is 0, prop is inapplicable 
+            prop_diff <- lapply(1:n, function(x) diff[[x]]/diff_sum)
+            score <- lapply(1:n, function(x) delta_x * prop_diff[[x]])
+            anagenic <- which(vapply(edge_list, function(x) is.numeric(x) && length(x) == 1, logical(1)))
+            cladogenic <- which(vapply(edge_list, function(x) length(x) > 1, logical(1)))
+            delta_xa <- sum(unlist(score[anagenic]))
+            delta_xe <- sum(unlist(score[extinct]))
+            delta_xc <- sum(unlist(score[cladogenic]))   
+            prop_xa <- sum(unlist(prop_diff[anagenic])) 
+            prop_xe <- sum(unlist(prop_diff[extinct])) 
+            prop_xc <- sum(unlist(prop_diff[cladogenic]))
+        } else {
+            delta_xa <- 0
+            delta_xe <- 0
+            delta_xc <- 0
+            prop_xa <- NA
+            prop_xe <- NA
+            prop_xc <- NA
+        }
+        newrow <- data.frame(delta_x = delta_x, delta_xa = delta_xa, delta_xe = delta_xe, delta_xc = delta_xc, prop_xa = prop_xa, prop_xe = prop_xe, prop_xc = prop_xc)
+        res <- rbind(res, newrow)
+    }
+    pd <- matrix(root_x, 1, 4)
+    ev <- root_x
+    for(i in 2:nrow(res)){
+        pd <- rbind(pd, pd[i-1,] + as.numeric(res[i,1:4])) #calculates x here, which is redundant. Should probably fix
+        ev <- c(ev, ev[[i-1]] + sum(res[i, c(2, 4)]))
+    }
+    pd <- as.data.frame(pd)
+    colnames(pd) <- c("x", "xa", "xe", "xc")
+    res <- cbind(res, pd, xac = ev)
+    res <- rbind(NA, res)
+    rownames(res) <- NULL
+    res$x <- unlist(lapply(tslice, mean))
+    x_sd <- unlist(lapply(tslice, sd))
+    x_sd[which(is.na(x_sd))] <- 0
+    c_time <- seq(from = 0, to = max(node.depth.edgelength(tree)), length.out = slices+1)
+    res <- cbind(time = c_time, res, x_sd = x_sd)
+    prop_xa <- res$delta_xa[-1]/res$delta_x[-1]
+    prop_xe <- res$delta_xe[-1]/res$delta_x[-1]
+    prop_xc <- res$delta_xc[-1]/res$delta_x[-1]
+    prop_xac <- (res$delta_xa[-1] + res$delta_xc[-1])/res$delta_x[-1]
+    prop_xa[is.na(prop_xa)] <- 0
+    prop_xe[is.na(prop_xe)] <- 0
+    prop_xc[is.na(prop_xc)] <- 0
+    prop_xac[is.na(prop_xac)] <- 0
+    sum_stats <- c(prop_xa = mean(prop_xa), prop_xe = mean(prop_xe), prop_xc = mean(prop_xc), prop_xac = mean(prop_xac))
+    res <- list("mean components" = sum_stats, "timeslice" = res)
+    return(res)
+}
+
+
