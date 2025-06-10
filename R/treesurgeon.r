@@ -2151,6 +2151,7 @@ anc_timeslice <- function(tree, x, anc = NULL, slices) {
 #' }
 #' 
 #' @examples
+#' ## Simulate a tree and data
 #' set.seed(109)
 #' tree <- sim_g_tree(b = 0.2, n = 10000, t = 200, ext = T, ext_t = 100, ext_s = 0.9)
 #' tree$edge.length <- unlist(lapply(tree$edge.length, function(x) x + runif(1, 0, 1)))
@@ -2160,6 +2161,8 @@ anc_timeslice <- function(tree, x, anc = NULL, slices) {
 #' tree <- ladderize(tree)
 #' tree$edge.length <- (tree$edge.length/max(node.depth.edgelength(tree))) * 100
 #' x <- fastBM(tree, a = 10, mu = 0.2)
+#' 
+#' ## Plot phenogram and mean trait change through time
 #' par(mfrow = c(2, 1))
 #' par(mar = c(2, 4.2, 0.5, 1))
 #' phenogram(tree = tree, x, ftype = "off", xlab = "", ylab = "Trait_x")
