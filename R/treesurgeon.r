@@ -2150,6 +2150,9 @@ anc_timeslice <- function(tree, x, anc = NULL, slices) {
 #' \item Anagenesis can produce a shift through consistent, directional evolution across all lineages over a short time period.
 #' }
 #' 
+#' @references
+#' Quintero, I., 2025. The diffused evolutionary dynamics of morphological novelty. Proceedings of the National Academy of Sciences, 122(18), p.e2425573122.
+#' 
 #' @examples
 #' ## Simulate a tree and data
 #' set.seed(109)

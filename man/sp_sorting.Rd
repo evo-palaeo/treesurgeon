@@ -114,3 +114,6 @@ lines(res$timeslice$time, res$timeslice$xe, type = "l", col = "orange")
 legend("topleft", legend=c("x", "xac", "xe"), col=c("red", "blue", "orange"), lty=1, cex=0.8, box.lty=0, inset = 0.001)
 par(mfrow = c(1, 1))
 }
+\references{
+Quintero, I., 2025. The diffused evolutionary dynamics of morphological novelty. Proceedings of the National Academy of Sciences, 122(18), p.e2425573122.
+}
