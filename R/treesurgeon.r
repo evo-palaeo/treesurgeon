@@ -2075,6 +2075,7 @@ anc_timeslice <- function(tree, x, anc = NULL, slices) {
     return(res)
 }
 
+
 #' Species Sorting
 #'
 #' Function that calculates the average change in a continuous trait through time for a given tree, and partitions this change into contributions from evolution and extinction. 
@@ -2135,12 +2136,24 @@ anc_timeslice <- function(tree, x, anc = NULL, slices) {
 #' \item Extinction: prop_xe
 #' }
 #' 
-#' 6) Multiply the total mean trait change Δx by each of these proportions to compute:
+#' 6) Multiply the mean trait change per interval (Δx) by each of these proportions to compute: 
 #' \itemize{
-#' \item Anagenetic change: Δxa = Δx * prop_xa
-#' \item Cladogenic change: Δxc = Δx * prop_xc
-#' \item Extinction-related change: Δxe = Δx * prop_xe
+#' \item Anagenetic change per interval: Δxa = Δx * prop_xa
+#' \item Cladogenic change per interval: Δxc = Δx * prop_xc
+#' \item Extinction-related change per interval: Δxe = Δx * prop_xe
 #' }
+#' 
+#' 7) Calculate proportion of x exaplained by anagenesis (xa), cladogenesis (xc), 'evolution' (anagenesis + cladogenesis - xac) and extinction (xe). \cr
+#' Assume that at t0, xa = x, xc = 0, xe = 0. \cr
+#' x = xa + xe + xc 
+#' \itemize{
+#' \item xa[t1] = xa[t0] + Δxa
+#' \item xc[t1] = xc[t0] + Δxc
+#' \item xe[t1] = xe[t0] + Δxe
+#' \item xac[t1] = xa[t1] + xc[t1]
+#' }
+#' 
+#' 8) Repeat steps 2:7 for each time interval. 
 #' 
 #' Interpretation:
 #' A sudden shift in trait x reflects a rapid change in its mean value. A positive shift indicates an abrupt increase in the mean, while a negative shift signals a decrease. If this shift aligns in direction with a change in one of the evolutionary components (anagenesis, cladogenesis, or extinction), it suggests that the component significantly contributed to the shift. \cr
@@ -2237,16 +2250,17 @@ sp_sorting <- function(tree, x, anc = NULL, slices) {
         newrow <- data.frame(delta_x = delta_x, delta_xa = delta_xa, delta_xe = delta_xe, delta_xc = delta_xc, prop_xa = prop_xa, prop_xe = prop_xe, prop_xc = prop_xc)
         res <- rbind(res, newrow)
     }
-    pd <- matrix(root_x, 1, 4)
-    ev <- root_x
+    xa <- tslice[[1]]
+	xc <- 0
+	xe <- 0
     for(i in 2:nrow(res)){
-        pd <- rbind(pd, pd[i-1,] + as.numeric(res[i,1:4])) #calculates x here, which is redundant. Should probably fix
-        ev <- c(ev, ev[[i-1]] + sum(res[i, c(2, 4)]))
+        xa <- c(xa, xa[i-1] + res$delta_xa[[i]])
+		xc <- c(xc, xc[i-1] + res$delta_xc[[i]])
+		xe <- c(xe, xe[i-1] + res$delta_xe[[i]])
     }
-    pd <- as.data.frame(pd)
-    colnames(pd) <- c("x", "xa", "xe", "xc")
-    res <- cbind(res, pd, xac = ev)
-    res <- rbind(NA, res)
+    pd <- data.frame(x = 0, xa = xa, xc = xc, xe = xe, xac = xa+xc)
+    res <- cbind(res, pd)
+	res <- rbind(NA, res)
     rownames(res) <- NULL
     res$x <- unlist(lapply(tslice, mean))
     x_sd <- unlist(lapply(tslice, sd))
@@ -2261,7 +2275,7 @@ sp_sorting <- function(tree, x, anc = NULL, slices) {
     prop_xe[is.na(prop_xe)] <- 0
     prop_xc[is.na(prop_xc)] <- 0
     prop_xac[is.na(prop_xac)] <- 0
-    sum_stats <- c(prop_xa = mean(prop_xa), prop_xe = mean(prop_xe), prop_xc = mean(prop_xc), prop_xac = mean(prop_xac))
+	sum_stats <- c(prop_xa = mean(prop_xa), prop_xe = mean(prop_xe), prop_xc = mean(prop_xc), prop_xac = mean(prop_xac))
     res <- list("mean components" = sum_stats, "timeslice" = res)
     return(res)
 }

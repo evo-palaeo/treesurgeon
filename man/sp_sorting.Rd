@@ -73,12 +73,24 @@ For each edge pair, calculate:
 \item Extinction: prop_xe
 }
 
-6) Multiply the total mean trait change Δx by each of these proportions to compute:
+6) Multiply the mean trait change per interval (Δx) by each of these proportions to compute: 
 \itemize{
-\item Anagenetic change: Δxa = Δx * prop_xa
-\item Cladogenic change: Δxc = Δx * prop_xc
-\item Extinction-related change: Δxe = Δx * prop_xe
+\item Anagenetic change per interval: Δxa = Δx * prop_xa
+\item Cladogenic change per interval: Δxc = Δx * prop_xc
+\item Extinction-related change per interval: Δxe = Δx * prop_xe
 }
+
+7) Calculate proportion of x exaplained by anagenesis (xa), cladogenesis (xc), 'evolution' (anagenesis + cladogenesis - xac) and extinction (xe). \cr
+Assume that at t0, xa = x, xc = 0, xe = 0. \cr
+x = xa + xe + xc 
+\itemize{
+\item xa[t1] = xa[t0] + Δxa
+\item xc[t1] = xc[t0] + Δxc
+\item xe[t1] = xe[t0] + Δxe
+\item xac[t1] = xa[t1] + xc[t1]
+}
+
+8) Repeat steps 2:7 for each time interval. 
 
 Interpretation:
 A sudden shift in trait x reflects a rapid change in its mean value. A positive shift indicates an abrupt increase in the mean, while a negative shift signals a decrease. If this shift aligns in direction with a change in one of the evolutionary components (anagenesis, cladogenesis, or extinction), it suggests that the component significantly contributed to the shift. \cr
