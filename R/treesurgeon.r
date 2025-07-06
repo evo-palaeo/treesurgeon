@@ -1002,7 +1002,7 @@ remove_part_info <- function(x){
     taxa <- sort(unique(unlist(lapply(x, names))))
     for(j in taxa){
         char <- character()
-        for(i in names(x)){
+        for(i in 1:length(x)){
             char <- c(char, x[[i]][[j]])
         }
         x2[[j]] <- char
@@ -1045,6 +1045,9 @@ remove_part_info <- function(x){
 #'Heatmap(df[,1:1500], row_names_side = "left", col = cols, na_col = "white", name = "states")
 #' 
 #' @export
+#' 
+#' FIX THIS - doesnt work if combining two partitions of the same type.
+#' Also doesnt work if combining nexdat. 
 
 cat_data <- function(..., use.part.info = F, part.names = NULL){
 	partitions <- list(...)
@@ -1055,22 +1058,32 @@ cat_data <- function(..., use.part.info = F, part.names = NULL){
 		new_data[[i]] <- list()
         # attempt to guess partition names
 
-        if(is.null(part.names)){
-            px <- unlist(partitions[[i]])
-            # remove missing data
-            px <- px[-which(px == "?"| px == "n" | px == "x" | px == "-")]
-            px_l <- length(px)
-            if(length(suppressWarnings(na.omit(as.numeric(px))))/px_l > 0.9){
-                names(new_data)[[i]] <- "standard"
-            } else if(length(px[which(px == "a" | px == "c" | px == "g" | px == "t" | px == "u")])/px_l > 0.9){
-                names(new_data)[[i]] <- "dna"
-                if(length(px[which(px == "u")]) > 0){
-                    names(new_data)[[i]] <- "rna"
-                }
-            } else {
-                names(new_data)[[i]] <- "protein"
-            }
-        }
+        if (is.null(part.names)) {
+			standard_count <- 0
+			dna_count <- 0
+			rna_count <- 0
+			protein_count <- 0	
+        	px <- unlist(partitions[[i]])
+       		# remove missing data
+        	px <- px[!(px %in% c("?", "n", "x", "-"))]
+        	px_l <- length(px)
+
+        	if (length(suppressWarnings(na.omit(as.numeric(px)))) / px_l > 0.9) {
+            	standard_count <- standard_count + 1
+            	names(new_data)[[i]] <- paste0("STANDARD_", standard_count)
+        	} else if (length(px[px %in% c("a", "c", "g", "t", "u")]) / px_l > 0.9) {
+            	if (length(px[px == "u"]) > 0) {
+                	rna_count <- rna_count + 1
+                	names(new_data)[[i]] <- paste0("RNA_", rna_count)
+            	} else {
+                	dna_count <- dna_count + 1
+                	names(new_data)[[i]] <- paste0("DNA_", dna_count)
+            	}
+        	} else {
+            	protein_count <- protein_count + 1
+            	names(new_data)[[i]] <- paste0("PROTEIN_", protein_count)
+        	}
+    	}
         names(partitions) <- tolower(part.names)
 		for(j in taxa){
 			if(is.null(partitions[[i]][[j]])){
