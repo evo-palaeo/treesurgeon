@@ -2237,7 +2237,7 @@ get_descendant_edges <- function(tree, current = T) {
 #' @export 
 
 sp_sorting <- function(tree, x, anc = NULL, slices) {
-    tslice <- anc_timeslice(tree, x, anc, slices)
+    tslice <- anc_timeslice(tree, x, slices = slices, anc = anc)
 	root_x <- tslice[[1]]
     desc_edges <- get_descendant_edges(tree)
     res <- data.frame()
