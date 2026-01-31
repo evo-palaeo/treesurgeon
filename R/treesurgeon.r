@@ -2017,7 +2017,7 @@ get_descendant_edges <- function(tree, current = T) {
 #' anc_timeslice(t1, x, slices = 10)
 #' @export 
 
-anc_timeslice <- function(tree,
+ anc_timeslice <- function(tree,
                           x,
                           slices = 10,
                           model = c("BM", "BMT", "OU"),
@@ -2028,7 +2028,7 @@ anc_timeslice <- function(tree,
                           anc = NULL) {
 
   model <- match.arg(model)
-  # QUICK FIX!!!!!!
+  # Quick Fix!
   ## ------------------------------------------------------------
   ## Basic checks
   ## ------------------------------------------------------------
@@ -2048,40 +2048,40 @@ anc_timeslice <- function(tree,
   ## ------------------------------------------------------------
   ## Compute or use ancestral states
   ## ------------------------------------------------------------
-  if (is.null(ancestral_states)) {
+  if (is.null(anc)) {
 
     if (model == "BM") {
 
-      anc <- fastAnc(tree, x)
+      anc_states <- fastAnc(tree, x)
 
     } else if (model == "BMT") {
 
       times <- node.depth.edgelength(tree)
       x_centered <- x - mu * times[seq_len(Ntip)]
-      anc <- fastAnc(tree, x_centered)
-      anc <- anc + mu * times[(Ntip + 1):(Ntip + Nnode)]
+      anc_states <- fastAnc(tree, x_centered)
+      anc_states <- anc_states + mu * times[(Ntip + 1):(Ntip + Nnode)]
 
     } else if (model == "OU") {
 
-      anc <- anc.ML(tree, x,
-                    model = "OU",
-                    sig2  = sigma2,
-                    alpha = alpha,
-                    theta = theta)$ace
+      anc_states <- anc.ML(tree, x,
+                           model = "OU",
+                           sig2  = sigma2,
+                           alpha = alpha,
+                           theta = theta)$ace
     }
 
   } else {
 
-    if (length(ancestral_states) != Nnode)
-      stop("ancestral_states must have length equal to number of internal nodes")
+    if (length(anc) != Nnode)
+      stop("anc must have length equal to number of internal nodes")
 
-    anc <- ancestral_states
+    anc_states <- anc
   }
 
   ## ------------------------------------------------------------
   ## Combine tip and node values
   ## ------------------------------------------------------------
-  node_values <- c(x, anc)
+  node_values <- c(x, anc_states)
   names(node_values) <- c(seq_len(Ntip),
                            (Ntip + 1):(Ntip + Nnode))
 
