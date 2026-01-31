@@ -2293,14 +2293,21 @@ sp_sorting <- function(tree, x, anc = NULL, slices) {
         newrow <- data.frame(delta_x = delta_x, delta_xa = delta_xa, delta_xe = delta_xe, delta_xc = delta_xc, prop_xa = prop_xa, prop_xe = prop_xe, prop_xc = prop_xc)
         res <- rbind(res, newrow)
     }
-    xa <- tslice[[1]]
-	xc <- 0
-	xe <- 0
-    for(i in 2:nrow(res)){
-        xa <- c(xa, xa[i-1] + res$delta_xa[[i]])
-		xc <- c(xc, xc[i-1] + res$delta_xc[[i]])
-		xe <- c(xe, xe[i-1] + res$delta_xe[[i]])
-    }
+	# initialise cumulative components as scalars
+	xa <- numeric(nrow(res))
+	xc <- numeric(nrow(res))
+	xe <- numeric(nrow(res))
+
+	xa[1] <- 0
+	xc[1] <- 0
+	xe[1] <- 0
+
+	for (i in 2:nrow(res)) {
+  		xa[i] <- xa[i - 1] + res$delta_xa[i]
+  		xc[i] <- xc[i - 1] + res$delta_xc[i]
+ 		xe[i] <- xe[i - 1] + res$delta_xe[i]
+	}
+	
     pd <- data.frame(x = 0, xa = xa, xc = xc, xe = xe, xac = xa+xc)
     res <- cbind(res, pd)
 	res <- rbind(NA, res)
