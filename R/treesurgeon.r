@@ -2115,7 +2115,15 @@ get_descendant_edges <- function(tree, current = T) {
     res[[i]] <- slice_vals
   }
 
-  names(res) <- seq_along(tslice)
+  ## ------------------------------------------------------------
+  ## ADD ROOT SLICE (time = 0)
+  ## ------------------------------------------------------------
+  root_node <- Ntip + 1
+  root_slice <- node_values[as.character(root_node)]
+
+  res <- c(list(root_slice), res)
+  names(res) <- 0:(length(res) - 1)
+
   res
 }
 
@@ -2293,21 +2301,14 @@ sp_sorting <- function(tree, x, anc = NULL, slices) {
         newrow <- data.frame(delta_x = delta_x, delta_xa = delta_xa, delta_xe = delta_xe, delta_xc = delta_xc, prop_xa = prop_xa, prop_xe = prop_xe, prop_xc = prop_xc)
         res <- rbind(res, newrow)
     }
-	# initialise cumulative components as scalars
-	xa <- numeric(nrow(res))
-	xc <- numeric(nrow(res))
-	xe <- numeric(nrow(res))
-
-	xa[1] <- 0
-	xc[1] <- 0
-	xe[1] <- 0
-
-	for (i in 2:nrow(res)) {
-  		xa[i] <- xa[i - 1] + res$delta_xa[i]
-  		xc[i] <- xc[i - 1] + res$delta_xc[i]
- 		xe[i] <- xe[i - 1] + res$delta_xe[i]
-	}
-	
+    xa <- tslice[[1]]
+	xc <- 0
+	xe <- 0
+    for(i in 2:nrow(res)){
+        xa <- c(xa, xa[i-1] + res$delta_xa[[i]])
+		xc <- c(xc, xc[i-1] + res$delta_xc[[i]])
+		xe <- c(xe, xe[i-1] + res$delta_xe[[i]])
+    }
     pd <- data.frame(x = 0, xa = xa, xc = xc, xe = xe, xac = xa+xc)
     res <- cbind(res, pd)
 	res <- rbind(NA, res)
