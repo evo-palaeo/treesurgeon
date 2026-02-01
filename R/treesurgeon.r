@@ -2111,7 +2111,7 @@ get_descendant_edges <- function(tree, current = T) {
       frac * (node_values[as.character(child_nodes)] -
               node_values[as.character(parent_nodes)])
 
-    names(slice_vals) <- child_nodes
+    names(slice_vals) <- ii
     res[[i]] <- slice_vals
   }
 
