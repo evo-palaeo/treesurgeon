@@ -2017,114 +2017,68 @@ get_descendant_edges <- function(tree, current = T) {
 #' anc_timeslice(t1, x, slices = 10)
 #' @export 
 
- anc_timeslice <- function(tree,
-                          x,
-                          slices = 10,
-                          model = c("BM", "BMT", "OU"),
-                          sigma2 = 1,
-                          mu = 0,
-                          alpha = 1,
-                          theta = 0,
-                          anc = NULL) {
-
-  model <- match.arg(model)
-  # Quick Fix!
-  ## ------------------------------------------------------------
-  ## Basic checks
-  ## ------------------------------------------------------------
-  if (!inherits(tree, "phylo"))
-    stop("tree must be of class 'phylo'")
-  if (is.null(tree$edge.length))
-    stop("tree must have edge lengths")
-
-  if (is.null(names(x))) {
-    names(x) <- tree$tip.label
-    warning("x had no names; assuming order matches tree$tip.label")
-  }
-
-  Ntip  <- length(tree$tip.label)
-  Nnode <- tree$Nnode
-
-  ## ------------------------------------------------------------
-  ## Compute or use ancestral states
-  ## ------------------------------------------------------------
-  if (is.null(anc)) {
-
-    if (model == "BM") {
-
-      anc_states <- fastAnc(tree, x)
-
-    } else if (model == "BMT") {
-
-      times <- node.depth.edgelength(tree)
-      x_centered <- x - mu * times[seq_len(Ntip)]
-      anc_states <- fastAnc(tree, x_centered)
-      anc_states <- anc_states + mu * times[(Ntip + 1):(Ntip + Nnode)]
-
-    } else if (model == "OU") {
-
-      anc_states <- anc.ML(tree, x,
-                           model = "OU",
-                           sig2  = sigma2,
-                           alpha = alpha,
-                           theta = theta)$ace
+ function (tree, x, slices = 10, model = c("BM", "BMT", "OU"), 
+    sigma2 = 1, mu = 0, alpha = 1, theta = 0, anc = NULL) 
+{
+    model <- match.arg(model)
+    if (!inherits(tree, "phylo")) 
+        stop("tree must be of class 'phylo'")
+    if (is.null(tree$edge.length)) 
+        stop("tree must have edge lengths")
+    if (is.null(names(x))) {
+        names(x) <- tree$tip.label
+        warning("x had no names; assuming order matches tree$tip.label")
     }
-
-  } else {
-
-    if (length(anc) != Nnode)
-      stop("anc must have length equal to number of internal nodes")
-
-    anc_states <- anc
-  }
-
-  ## ------------------------------------------------------------
-  ## Combine tip and node values
-  ## ------------------------------------------------------------
-  node_values <- c(x, anc_states)
-  names(node_values) <- c(seq_len(Ntip),
-                           (Ntip + 1):(Ntip + Nnode))
-
-  ## ------------------------------------------------------------
-  ## Slice geometry
-  ## ------------------------------------------------------------
-  H <- nodeHeights(tree)
-  Tmax <- max(H)
-
-  tslice <- seq(0, Tmax, length.out = slices + 2)[-c(1, slices + 2)]
-  res <- vector("list", length(tslice))
-
-  ## ------------------------------------------------------------
-  ## Interpolate along branches
-  ## ------------------------------------------------------------
-  for (i in seq_along(tslice)) {
-
-    t <- tslice[i]
-
-    ii <- which(H[,1] <= t & H[,2] > t)
-    frac <- (t - H[ii,1]) / (H[ii,2] - H[ii,1])
-
-    parent_nodes <- tree$edge[ii, 1]
-    child_nodes  <- tree$edge[ii, 2]
-
-    slice_vals <- node_values[as.character(parent_nodes)] +
-      frac * (node_values[as.character(child_nodes)] -
-              node_values[as.character(parent_nodes)])
-
-    names(slice_vals) <- ii
-    res[[i]] <- slice_vals
-  }
-
-  ## ------------------------------------------------------------
-  ## ADD ROOT SLICE (time = 0)
-  ## ------------------------------------------------------------
-  root_node <- Ntip + 1
-  root_slice <- node_values[as.character(root_node)]
-
-  res <- c(list(root_slice), res)
-  names(res) <- 0:(length(res) - 1)
-
-  res
+    Ntip <- length(tree$tip.label)
+    Nnode <- tree$Nnode
+    if (is.null(anc)) {
+        if (model == "BM") {
+            anc_states <- fastAnc(tree, x)
+        }
+        else if (model == "BMT") {
+            times <- node.depth.edgelength(tree)
+            x_centered <- x - mu * times[seq_len(Ntip)]
+            anc_states <- fastAnc(tree, x_centered)
+            anc_states <- anc_states + mu * times[(Ntip + 1):(Ntip + 
+                Nnode)]
+        }
+        else if (model == "OU") {
+            anc_states <- anc.ML(tree, x, model = "OU", sig2 = sigma2, 
+                alpha = alpha, theta = theta)$ace
+        }
+    }
+    else {
+        if (length(anc) != Nnode) 
+            stop("anc must have length equal to number of internal nodes")
+        anc_states <- anc
+    }
+    node_values <- c(x, anc_states)
+    names(node_values) <- c(seq_len(Ntip), (Ntip + 1):(Ntip + 
+        Nnode))
+    H <- nodeHeights(tree)
+    Tmax <- max(H)
+    tslice <- tslice <- seq(0, Tmax, length.out = slices + 1)
+    res <- vector("list", length(tslice[-1]))
+    for (i in seq_along(tslice[-1])) {
+        t <- tslice[-1][[i]]
+        ii <- which(H[, 1] <= t & H[, 2] > t)
+        frac <- (t - H[ii, 1])/(H[ii, 2] - H[ii, 1])
+        parent_nodes <- tree$edge[ii, 1]
+        child_nodes <- tree$edge[ii, 2]
+        slice_vals <- node_values[as.character(parent_nodes)] + 
+            frac * (node_values[as.character(child_nodes)] - 
+                node_values[as.character(parent_nodes)])
+        names(slice_vals) <- ii
+        res[[i]] <- slice_vals
+    }
+    root_node <- Ntip + 1
+    root_slice <- node_values[as.character(root_node)]
+    res <- c(list(root_slice), res)
+    names(res) <- 0:(length(res) - 1)
+    t100_edges <- which(round(H[,2], 8) == Tmax)
+    t100_tips <- tree$edge[t100_edges,2]
+    res$`100` <- x[t100_tips]
+    names(res$`100`) <- t100_edges
 }
 
 #' Species Sorting
