@@ -2075,10 +2075,10 @@ get_descendant_edges <- function(tree, current = T) {
     root_slice <- node_values[as.character(root_node)]
     res <- c(list(root_slice), res)
     names(res) <- 0:(length(res) - 1)
-    t100_edges <- which(round(H[,2], 8) == Tmax)
-    t100_tips <- tree$edge[t100_edges,2]
-    res$`100` <- x[t100_tips]
-    names(res$`100`) <- t100_edges
+    t100_tips <- which(round(node.depth.edgelength(tree), 8) == Tmax)
+	t100_edges <- which(tree$edge[,2] == t100_tips)
+    res[slices + 1] <- x[t100_tips]
+	names(res[slices + 1]) <- t100_edges
 	return(res)
 }
 
