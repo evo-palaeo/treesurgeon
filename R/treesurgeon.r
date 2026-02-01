@@ -2079,6 +2079,7 @@ get_descendant_edges <- function(tree, current = T) {
     t100_tips <- tree$edge[t100_edges,2]
     res$`100` <- x[t100_tips]
     names(res$`100`) <- t100_edges
+	return(res)
 }
 
 #' Species Sorting
