@@ -2017,7 +2017,7 @@ get_descendant_edges <- function(tree, current = T) {
 #' anc_timeslice(t1, x, slices = 10)
 #' @export 
 
- function (tree, x, slices = 10, model = c("BM", "BMT", "OU"), 
+ anc_timeslice <- function (tree, x, slices = 10, model = c("BM", "BMT", "OU"), 
     sigma2 = 1, mu = 0, alpha = 1, theta = 0, anc = NULL) 
 {
     model <- match.arg(model)
