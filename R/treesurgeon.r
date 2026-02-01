@@ -2029,6 +2029,7 @@ get_descendant_edges <- function(tree, current = T) {
         names(x) <- tree$tip.label
         warning("x had no names; assuming order matches tree$tip.label")
     }
+	x <- x[tree$tip.label]
     Ntip <- length(tree$tip.label)
     Nnode <- tree$Nnode
     if (is.null(anc)) {
