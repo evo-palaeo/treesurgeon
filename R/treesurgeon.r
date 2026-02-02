@@ -2288,3 +2288,50 @@ sp_sorting <- function(tree, x, anc = NULL, slices) {
 }
 
 
+#' Get Node Ages
+#'
+#' Function that estimates ancestral trait values along each edge of a phylogenetic tree, based on a continuous trait and a user-specified number of time slices.
+#' @param tree 	an object of class 'phylo'.
+#' @return Returns a numeric vector of internal node ages, where names() are node numbers.
+#' @details This function calculates the ages of internal nodes in a phylogenetic tree with branch lengths and a specified root time. It computes the distance from the root to each internal node and converts these distances into absolute ages by subtracting them from the root time.     
+#' @examples
+#' data(vert_data)
+#' get_node_ages(vert_data)
+#' @export 
+
+get_node_ages <- function(tree) {
+    
+    # Check: phylo object
+    if (!inherits(tree, "phylo")) {
+        stop("tree must be an object of class 'phylo'")
+    }
+    
+    # Check: branch lengths
+    if (is.null(tree$edge.length)) {
+        stop("tree must have branch lengths")
+    }
+    
+    # Check: root.time
+    if (is.null(tree$root.time)) {
+        stop("tree must have a 'root.time' element")
+    }
+    
+    if (!is.numeric(tree$root.time) || length(tree$root.time) != 1) {
+        stop("'root.time' must be a single numeric value")
+    }
+    
+    root.time <- tree$root.time
+    
+    # Distance from root to all nodes
+    ndel <- ape::node.depth.edgelength(tree)
+    
+    # Internal nodes only
+    node_ages <- tail(ndel, ape::Nnode(tree))
+    
+    # Convert distances to absolute ages
+    node_ages <- abs(node_ages - root.time)
+    
+    names(node_ages) <- seq_len(ape::Nnode(tree)) + length(tree$tip.label)
+    
+    return(node_ages)
+}

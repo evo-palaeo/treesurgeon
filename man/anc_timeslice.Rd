@@ -4,16 +4,26 @@
 \alias{anc_timeslice}
 \title{Anc timeslice}
 \usage{
-anc_timeslice(tree, x, anc = NULL, slices)
+anc_timeslice(
+  tree,
+  x,
+  slices = 10,
+  model = c("BM", "BMT", "OU"),
+  sigma2 = 1,
+  mu = 0,
+  alpha = 1,
+  theta = 0,
+  anc = NULL
+)
 }
 \arguments{
 \item{tree}{an object of class 'phylo'.}
 
 \item{x}{vector of tip values for species; names(x) should be the species names.}
 
-\item{anc}{vector of internal node values. If not specified, these will be estimated using BM.}
-
 \item{slices}{integer specifying the number of timeslices to use.}
+
+\item{anc}{vector of internal node values. If not specified, these will be estimated using BM.}
 }
 \value{
 Returns a list of length slices + 1, containing the trait value at the root and for each edge intersecting each timeslice.
