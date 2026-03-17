@@ -19,8 +19,8 @@ Function to generate ultrametric edge lengths for tree plots.
 This function is equivalent to plot.tree(node.depth = 2) except that a vector of edge.lengths are included in the output 'phylo' object.
 }
 \examples{
-t1 <- rtree(30);
-plot(t1);
-t2 <- u_edge_lengths(t1);
-plot(t2);
+t1 <- rtree(30)
+plot(t1)
+t2 <- u_edge_lengths(t1)
+plot(t2)
 }

@@ -25,14 +25,14 @@ This function requires the phylo object to have numeric node labels specified (e
 set.seed(8)
 t1 <- rtree(10)
 trees1 <- t1
-for(i in 1:49){ 
-  trees1 <- c(trees1, rSPR(t1, 1))
+for (i in 1:49) {
+    trees1 <- c(trees1, rSPR(t1, 1))
 }
 t2 <- rSPR(t1, 3)
 t2 <- multi2di(t2)
 trees2 <- t2
-for(i in 1:49){ 
-  trees2 <- c(trees2, rSPR(t2, 1))
+for (i in 1:49) {
+    trees2 <- c(trees2, rSPR(t2, 1))
 }
 trees <- c(trees1, trees2)
 ## get maximum clade credibility tree
@@ -41,7 +41,7 @@ plot(mcc)
 ## calculate clade_support values
 mcc <- clade_support(trees, mcc, digits = 2)
 nodelabels(text = mcc$node.label)
-## collapse nodes with less than 50\% support 
+## collapse nodes with less than 50\% support
 mcc_collapsed <- collapse_thresh(mcc, 0.5)
 plot(mcc_collapsed)
 nodelabels(text = mcc_collapsed$node.label)

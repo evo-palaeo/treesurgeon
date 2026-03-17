@@ -27,13 +27,13 @@ true_history <- sim.history(tree, Q)
 ## Estimate Q using ER and ARD models.
 fitER <- fitMk(tree, x = true_history$states, model = "ER")
 fitARD <- fitMk(tree, x = true_history$states, model = "ARD")
-## Calculate information criteria. 
+## Calculate information criteria.
 get_info(fitER$logLik, 1, 50)
 get_info(fitARD$logLik, 2, 50)
 }
 \references{
-Akaike, H., 1998. Information theory and an extension of the maximum likelihood principle. In Selected papers of hirotugu akaike (pp. 199-213). New York, NY: Springer New York. \cr 
-Sugiura, N., 1978. Further analysis of the data by akaike's information criterion and the finite corrections: Further analysis of the data by akaike's. Communications in Statistics-theory and Methods, 7(1), pp.13-26. \cr 
-Hurvich, C.M. and Tsai, C.L., 1991. Bias of the corrected AIC criterion for underfitted regression and time series models. Biometrika, 78(3), pp.499-509.  \cr 
+Akaike, H., 1998. Information theory and an extension of the maximum likelihood principle. In Selected papers of hirotugu akaike (pp. 199-213). New York, NY: Springer New York. \cr
+Sugiura, N., 1978. Further analysis of the data by akaike's information criterion and the finite corrections: Further analysis of the data by akaike's. Communications in Statistics-theory and Methods, 7(1), pp.13-26. \cr
+Hurvich, C.M. and Tsai, C.L., 1991. Bias of the corrected AIC criterion for underfitted regression and time series models. Biometrika, 78(3), pp.499-509.  \cr
 Schwarz, G., 1978. Estimating the dimension of a model. The annals of statistics, pp.461-464.
 }

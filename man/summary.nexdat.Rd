@@ -19,7 +19,7 @@ Function to sumarise an object of class 'nexdat'.
 This function returns the proportion of missing characters and proportion of gaps per taxon.
 }
 \examples{
-data(Lavoue2016) 
+data(Lavoue2016)
 summary(Lavoue2016$dna)
 
 }

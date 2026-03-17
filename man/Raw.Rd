@@ -23,7 +23,7 @@ to do!
 \examples{
 ## Example marginal ancestral state estimate for a node
 x <- runif(n = 4, min = 0, max = 10)
-x <- x/sum(x)
+x <- x / sum(x)
 names(x) <- 1:4
 x
 ## Example true data

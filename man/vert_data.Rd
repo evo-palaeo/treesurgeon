@@ -19,9 +19,9 @@ plot(vert_data, cex = 0.5, no.margin = T)
 head(vert_data$morph)
 }
 \references{
-Keating, J.N. and Donoghue, P.C., 2016. Histology and affinity of anaspids, and the early evolution of the vertebrate dermal skeleton. Proceedings of the Royal Society B: Biological Sciences, 283(1826), p.20152917. \cr 
-O'Shea, J., Keating, J.N. and Donoghue, P.C., 2019. The dermal skeleton of the jawless vertebrate Tremataspis mammillata (Osteostraci, stem‐Gnathostomata). Journal of morphology, 280(7), pp.999-1025. \cr 
-de Buffrénil, V., Clarac, F., Canoville, A. and Laurin, M., 2016. Comparative data on the differentiation and growth of bone ornamentation in gnathostomes (Chordata: Vertebrata). Journal of Morphology, 277(5), pp.634-670. \cr 
+Keating, J.N. and Donoghue, P.C., 2016. Histology and affinity of anaspids, and the early evolution of the vertebrate dermal skeleton. Proceedings of the Royal Society B: Biological Sciences, 283(1826), p.20152917. \cr
+O'Shea, J., Keating, J.N. and Donoghue, P.C., 2019. The dermal skeleton of the jawless vertebrate Tremataspis mammillata (Osteostraci, stem‐Gnathostomata). Journal of morphology, 280(7), pp.999-1025. \cr
+de Buffrénil, V., Clarac, F., Canoville, A. and Laurin, M., 2016. Comparative data on the differentiation and growth of bone ornamentation in gnathostomes (Chordata: Vertebrata). Journal of Morphology, 277(5), pp.634-670. \cr
 Witzmann, F, 2009. Comparative histology of sculptured dermal bones in basal tetrapods, and the implications for the soft tissue dermis. Palaeodiversity, 2(233), p.e270.
 }
 \keyword{datasets}

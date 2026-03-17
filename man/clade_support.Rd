@@ -25,7 +25,9 @@ This function is a wrapper for the ape function prop.clades.
 \examples{
 best_tree <- rtree(20)
 sample_trees <- list()
-for(i in 1:100){ sample_trees[[i]] <- rSPR(best_tree, 1)}
+for (i in 1:100) {
+    sample_trees[[i]] <- rSPR(best_tree, 1)
+}
 class(sample_trees) <- "multiPhylo"
 best_tree <- clade_support(sample_trees, best_tree)
 plot(best_tree)

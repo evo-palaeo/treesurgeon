@@ -44,14 +44,14 @@ This function performs leave-one-out cross-validation using phytools::fitMk() an
 \examples{
 ## Load data
 head(vert_data$morph)
-tp <- get_tip_priors(vert_data$morph[,2], extra_state = T)
+tp <- get_tip_priors(vert_data$morph[, 2], extra_state = T)
 colnames(tp[[1]]) <- c("bone absent", "secondary osteons absent", "secondary osteons present")
 ## Register parallel backend for Windows with doParallel
 cl <- parallel::makeCluster(2)
 doParallel::registerDoParallel(cl)
 ## Register parallel backend for Linux or MacOS with doParallel
 nc <- parallel::detectCores()
-doParallel::registerDoParallel(cores=nc)
+doParallel::registerDoParallel(cores = nc)
 loo_cv(tree = vert_data, x = tp[[1]], model = "ER")
 loo_cv(tree = vert_data, x = tp[[1]], model = "ARD")
 stopCluster(cl)
