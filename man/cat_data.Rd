@@ -24,10 +24,10 @@ This function can be used to combine seperate lists of phylogenetic characters w
 }
 \examples{
 data(Lavoue2016)
-combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F) 
-## Visualise 
-if(!require("BiocManager", quietly = TRUE)){
-	install.packages("BiocManager")
+combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F)
+## Visualise
+if (!require("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
 }
 BiocManager::install("ComplexHeatmap")
 library(ComplexHeatmap)
@@ -44,6 +44,6 @@ mol_states <- which(names(cols) \%in\% c("a", "c", "g", "t"))
 cols[morph_states] <- hcl.colors(n = length(morph_states), palette = "Hawaii")
 cols[mol_states] <- hcl.colors(n = length(mol_states), palette = "zissou")
 cols[-c(mol_states, morph_states)] <- hcl.colors(n = length(cols[-c(mol_states, morph_states)]), palette = "Cividis")
-Heatmap(df[,1:1500], row_names_side = "left", col = cols, na_col = "white", name = "states")
+Heatmap(df[, 1:1500], row_names_side = "left", col = cols, na_col = "white", name = "states")
 
 }

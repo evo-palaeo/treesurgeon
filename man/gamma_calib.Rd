@@ -26,14 +26,14 @@ a histogram of the prior distribution with labelled soft maximum and hard minimu
 Function to generate a gamma-shaped node calibration for Bayesian molecular clock analysis.
 }
 \examples{
-##vertebrate calibration from Benton et al (2015): hard min = 457.5, soft max = 636.1.
-par(mar = c(2.2,2.2,1.5,1.5))
-par(mfrow=c(3,1))
-##plot calibration assuming a low probability the age of the node is older than the soft maximum age and a low probability the age of the node is older than the hard-minimum age.
+## vertebrate calibration from Benton et al (2015): hard min = 457.5, soft max = 636.1.
+par(mar = c(2.2, 2.2, 1.5, 1.5))
+par(mfrow = c(3, 1))
+## plot calibration assuming a low probability the age of the node is older than the soft maximum age and a low probability the age of the node is older than the hard-minimum age.
 gamma_calib(457.5, 636.1, 1, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
-##plot calibration assuming a low probability the age of the node is older than the soft maximum age and a high probability the age of the node is older than the hard-minimum age.
+## plot calibration assuming a low probability the age of the node is older than the soft maximum age and a high probability the age of the node is older than the hard-minimum age.
 gamma_calib(457.5, 636.1, 3, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
-##plot calibration assuming a high probability the age of the node is older than the soft maximum age and a high probability the age of the node is older than the hard-minimum age.
+## plot calibration assuming a high probability the age of the node is older than the soft maximum age and a high probability the age of the node is older than the hard-minimum age.
 gamma_calib(457.5, 636.1, 3, 0.75, xlim = c(0, 1000), ylim = c(0, 0.025))
 }
 \references{

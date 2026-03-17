@@ -32,8 +32,8 @@ colnames(tp_ED) <- c("bone absent", "secondary osteons absent", "secondary osteo
 ## Get SMM using rphenoscate
 remotes::install_github("uyedaj/rphenoscate")
 library(rphenoscate)
-c1 <- matrix(c(-1, 1, 1, -1), 2, 2, byrow = TRUE, dimnames =list( c("a", "p"), c("a", "p")) )
-c2 <-matrix(c(-2, 2, 2, -2), 2, 2, byrow = TRUE, dimnames =list( c("A", "P"), c("A", "P")) )
+c1 <- matrix(c(-1, 1, 1, -1), 2, 2, byrow = TRUE, dimnames = list(c("a", "p"), c("a", "p")))
+c2 <- matrix(c(-2, 2, 2, -2), 2, 2, byrow = TRUE, dimnames = list(c("A", "P"), c("A", "P")))
 SMM_ind <- amaSMM_2Q(c1, c2, controlling.state = NULL, diag.as = 0)
 ED <- amaED(c1, c2, diag.as = 0)
 ## conduct ancestral state analysis using phytools and plot.
@@ -43,8 +43,8 @@ ancSMM <- ancr(fitSMM)
 ancED <- ancr(fitED)
 plot(ancSMM, legend = "topleft")
 ## Collapse hidden states to observed states and plot
-ancSMM$ace <- as.matrix(data.frame("bone absent" = ancSMM$ace[,1] + ancSMM$ace[,2], "secondary osteons absent" = ancSMM$ace[,3], "secondary osteons present" = ancSMM$ace[,4]))
-attributes(ancSMM)$data <- as.matrix(data.frame("bone absent" = tp_SMM[,1] + tp_SMM[,2], "secondary osteons absent" = tp_SMM[,3], "secondary osteons present" = tp_SMM[,4]))
+ancSMM$ace <- as.matrix(data.frame("bone absent" = ancSMM$ace[, 1] + ancSMM$ace[, 2], "secondary osteons absent" = ancSMM$ace[, 3], "secondary osteons present" = ancSMM$ace[, 4]))
+attributes(ancSMM)$data <- as.matrix(data.frame("bone absent" = tp_SMM[, 1] + tp_SMM[, 2], "secondary osteons absent" = tp_SMM[, 3], "secondary osteons present" = tp_SMM[, 4]))
 plot(ancSMM, legend = "topleft")
 ## plot ED model
 plot(ancED, legend = "topleft")

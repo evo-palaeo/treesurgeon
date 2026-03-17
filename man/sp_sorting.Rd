@@ -18,20 +18,20 @@ sp_sorting(tree, x, anc = NULL, slices)
 \value{
 Returns a data.frame "timeslice" containing the following columns:
 \itemize{
-\item time: time since root node. 
+\item time: time since root node.
 \item delta_x: mean change in trait x since previous timeslice.
 \item delta_xa: anagenic component of delta_x.
-\item delta_xe: extinction component of delta_x. 
+\item delta_xe: extinction component of delta_x.
 \item delta_xc: cladogenic component of delta_x.
 \item prop_xa: Proportion of total change in trait x since previous timeslice due to anagenesis.
 \item prop_xe: Proportion of total change in trait x since previous timeslice due to extinction.
-\item prop_xc: Proportion of total change in trait x since previous timeslice due to cladogenesis. 
+\item prop_xc: Proportion of total change in trait x since previous timeslice due to cladogenesis.
 \item x: Mean value of trait x.
 \item xa: Mean value of trait x * prop_xa.
 \item xe: Mean value of trait x * prop_xe.
 \item xc: Mean value of trait x * prop_xc.
 \item xac: Mean value of trait x * (prop_xc + prop_xa).
-\item x_sd: Standard deviation of trait x. 
+\item x_sd: Standard deviation of trait x.
 }
 The function also produces a numeric vector "mean components" containing the mean values of prop_xa, prop_xe, prop_xc and prop_xac accross all timeslices.
 }
@@ -41,17 +41,17 @@ Function that calculates the average change in a continuous trait through time f
 \details{
 This function expands on work by Quintero 2025. The calculation is as follows:
 
-1) Divide the tree into timeslices and estimate ancestral trait values: 
+1) Divide the tree into timeslices and estimate ancestral trait values:
 \itemize{
 \item At each point where a timeslice intersects a branch (edge) of the tree, estimate the ancestral value of the trait. This is done using the anc_timeslice() function.
 }
 
-2) Compute trait change per interval. For each time interval bounded by two timeslices (t0 and t1): \cr 
+2) Compute trait change per interval. For each time interval bounded by two timeslices (t0 and t1): \cr
 \itemize{
-\item Compute the mean change in trait x. 
+\item Compute the mean change in trait x.
 \item Δx = mean(x_t1) - mean(x_t2)
 }
- 
+
 3) Identify edge types between timeslices:
 \itemize{
 \item Anagenetic edges: Present in both t0 and t1.
@@ -73,7 +73,7 @@ For each edge pair, calculate:
 \item Extinction: prop_xe
 }
 
-6) Multiply the mean trait change per interval (Δx) by each of these proportions to compute: 
+6) Multiply the mean trait change per interval (Δx) by each of these proportions to compute:
 \itemize{
 \item Anagenetic change per interval: Δxa = Δx * prop_xa
 \item Cladogenic change per interval: Δxc = Δx * prop_xc
@@ -82,7 +82,7 @@ For each edge pair, calculate:
 
 7) Calculate proportion of x exaplained by anagenesis (xa), cladogenesis (xc), 'evolution' (anagenesis + cladogenesis - xac) and extinction (xe). \cr
 Assume that at t0, xa = x, xc = 0, xe = 0. \cr
-x = xa + xe + xc 
+x = xa + xe + xc
 \itemize{
 \item xa[t1] = xa[t0] + Δxa
 \item xc[t1] = xc[t0] + Δxc
@@ -90,7 +90,7 @@ x = xa + xe + xc
 \item xac[t1] = xa[t1] + xc[t1]
 }
 
-8) Repeat steps 2:7 for each time interval. 
+8) Repeat steps 2:7 for each time interval.
 
 Interpretation:
 A sudden shift in trait x reflects a rapid change in its mean value. A positive shift indicates an abrupt increase in the mean, while a negative shift signals a decrease. If this shift aligns in direction with a change in one of the evolutionary components (anagenesis, cladogenesis, or extinction), it suggests that the component significantly contributed to the shift. \cr
@@ -106,10 +106,10 @@ set.seed(109)
 tree <- sim_g_tree(b = 0.2, n = 10000, t = 200, ext = T, ext_t = 100, ext_s = 0.9)
 tree$edge.length <- unlist(lapply(tree$edge.length, function(x) x + runif(1, 0, 1)))
 tree <- treeSlice(tree, 190, orientation = "rootwards")
-tree$edge.length <- (tree$edge.length/max(node.depth.edgelength(tree))) * 100
+tree$edge.length <- (tree$edge.length / max(node.depth.edgelength(tree))) * 100
 tree <- keep.tip(tree, sample(1:Ntip(tree), 50))
 tree <- ladderize(tree)
-tree$edge.length <- (tree$edge.length/max(node.depth.edgelength(tree))) * 100
+tree$edge.length <- (tree$edge.length / max(node.depth.edgelength(tree))) * 100
 x <- fastBM(tree, a = 10, mu = 0.2)
 
 ## Plot phenogram and mean trait change through time
@@ -118,12 +118,12 @@ par(mar = c(2, 4.2, 0.5, 1))
 phenogram(tree = tree, x, ftype = "off", xlab = "", ylab = "Trait_x")
 res <- sp_sorting(tree, x, anc = NULL, 100)
 par(mar = c(4.2, 4.2, 0.5, 1))
-plot_range <- na.omit((unlist(res$timeslice[,9:13])))
+plot_range <- na.omit((unlist(res$timeslice[, 9:13])))
 plot(0:100, 0:100, type = "n", xlim = c(0, max(res$timeslice$time)), ylim = c(min(plot_range), max(plot_range)), xlab = "Time", ylab = "Trait_x")
 lines(res$timeslice$time, res$timeslice$x, type = "l", col = "red")
 lines(res$timeslice$time, res$timeslice$xac, type = "l", col = "blue")
 lines(res$timeslice$time, res$timeslice$xe, type = "l", col = "orange")
-legend("topleft", legend=c("x", "xac", "xe"), col=c("red", "blue", "orange"), lty=1, cex=0.8, box.lty=0, inset = 0.001)
+legend("topleft", legend = c("x", "xac", "xe"), col = c("red", "blue", "orange"), lty = 1, cex = 0.8, box.lty = 0, inset = 0.001)
 par(mfrow = c(1, 1))
 }
 \references{

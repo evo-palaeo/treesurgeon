@@ -21,6 +21,6 @@ This function removes partition information from a 'multi_nexdat' object, thereb
 \examples{
 data(Lavoue2016)
 partitioned_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = T)
-concatenated_data <- remove_part_info(partitioned_data)  
+concatenated_data <- remove_part_info(partitioned_data)
 
 }

@@ -25,7 +25,7 @@ Q <- matrix(c(-0.2, 0.2, 0.2, -0.2), nrow = 2, ncol = 2)
 true_history <- sim.history(tree, Q)
 ## Estimate Q.
 fitMK <- fitMk(tree, x = true_history$states, model = "ER")
-## Compare likelihoods. 
+## Compare likelihoods.
 fitMK$logLik
 total_garbage(true_history$states)
 fitMK$logLik > total_garbage(true_history$states)
@@ -35,7 +35,7 @@ Q <- matrix(c(-100, 100, 100, -100), nrow = 2, ncol = 2)
 true_history <- sim.history(tree, Q)
 ## Estimate Q.
 fitMK <- fitMk(tree, x = true_history$states, model = "ER")
-## Compare likelihoods. 
+## Compare likelihoods.
 fitMK$logLik
 total_garbage(true_history$states)
 fitMK$logLik > total_garbage(true_history$states)

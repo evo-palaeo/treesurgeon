@@ -30,7 +30,7 @@ node_states <- tail(sim_x, Nnode(t1))
 ## Estimate ancestral states
 fitARD <- fitMk(t1, x = tip_states, model = "ARD")
 ancARD <- ancr(fitARD)
- ## Calculate Multiclass Brier score
+## Calculate Multiclass Brier score
 multBrier(prediction = ancARD$ace, truth = node_states)
 
 }

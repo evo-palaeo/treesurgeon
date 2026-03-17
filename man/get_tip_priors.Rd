@@ -27,7 +27,7 @@ This function converts categorical characters, coded in 'standard' format (e.g. 
 data(vert_data)
 head(vert_data$morph)
 ## Convert secondary osteon character to tip priors, interpreting inapplicable ('-') as an additional state (i.e. absent).
-tp <- get_tip_priors(vert_data$morph[,2], extra_state = T)
+tp <- get_tip_priors(vert_data$morph[, 2], extra_state = T)
 colnames(tp[[1]]) <- c("bone absent", "secondary osteons absent", "secondary osteons present")
 ## conduct ancestral state analysis using phytools.
 fitER <- fitMk(tree = vert_data, x = tp[[1]], model = "ER")

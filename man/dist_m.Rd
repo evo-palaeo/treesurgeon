@@ -28,14 +28,14 @@ This function uses the foreach package to calculate tree to tree distances in pa
 ## simulate two groups of trees
 t1 <- rtree(40)
 trees1 <- t1
-for(i in 1:199){ 
-  trees1 <- c(trees1, rSPR(t1, 1))
+for (i in 1:199) {
+    trees1 <- c(trees1, rSPR(t1, 1))
 }
 t2 <- rSPR(t1, 3)
 t2 <- multi2di(t2)
 trees2 <- t2
-for(i in 1:199){ 
-  trees2 <- c(trees2, rSPR(t2, 1))
+for (i in 1:199) {
+    trees2 <- c(trees2, rSPR(t2, 1))
 }
 trees <- c(trees1, trees2)
 
@@ -45,7 +45,7 @@ doParallel::registerDoParallel(cl)
 
 ## Register parallel backend for Linux or MacOS with doParallel
 nc <- parallel::detectCores()
-doParallel::registerDoParallel(cores=nc)
+doParallel::registerDoParallel(cores = nc)
 
 ## Calculate tree distances
 tree_dists <- dist_m(trees, method = "RF", slices = 3, normalise = T)
@@ -57,8 +57,12 @@ sum_res <- summary(pca_res)
 # install.packages("factoextra")
 # library("ggplot2")
 # library("factoextra")
-fviz_eig(pca_res, addlabels=TRUE, hjust = -0.3)
+fviz_eig(pca_res, addlabels = TRUE, hjust = -0.3)
 ## plot PCA results
-ggplot(pca_res$x, aes(PC1, PC2)) + geom_point(alpha = 0.4, size = 2) +  xlab(paste("PC1 = ", sum_res$importance[2,1], sep = "")) + ylab(paste("PC2 = ", sum_res$importance[2,2], sep = "")) + theme_minimal()
+ggplot(pca_res$x, aes(PC1, PC2)) +
+    geom_point(alpha = 0.4, size = 2) +
+    xlab(paste("PC1 = ", sum_res$importance[2, 1], sep = "")) +
+    ylab(paste("PC2 = ", sum_res$importance[2, 2], sep = "")) +
+    theme_minimal()
 
 }
