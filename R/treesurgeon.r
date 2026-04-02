@@ -2130,8 +2130,8 @@ loo_cv <- function(tree, x, model = "ER", fixedQ = NULL,
     }
 
     c(
-      Raw = Raw(cv$ace[i, ], true_state),
-      Brier = Brier(cv$ace[i, ], true_state),
+      Raw = treesurgeon::Raw(cv$ace[i, ], true_state),
+      Brier = treesurgeon::Brier(cv$ace[i, ], true_state),
       `mean logL` = object$logLik
     )
   }
