@@ -9,6 +9,12 @@ get_index_matrix(
   ordered = FALSE,
   states = NULL
 )
+
+get_index_matrix(
+  model = c("ER", "SYM", "ASYM", "ARD"),
+  ordered = FALSE,
+  states = NULL
+)
 }
 \arguments{
 \item{model}{character. The model of discrete character evolution. One of "ER", "SYM", "ASYM", or "ARD".}
@@ -19,8 +25,13 @@ get_index_matrix(
 }
 \value{
 A square numeric matrix of size n x n, where n is the number of states. Off-diagonal entries indicate rate classes, and diagonal entries are 0.
+
+A square numeric matrix of size n x n, where n is the number of states. Off-diagonal entries indicate rate classes, and diagonal entries are 0.
 }
 \description{
+Function to generate an index matrix for discrete character evolution models.
+Independent transition rates are labelled 1, 2, 3, etc., while diagonal entries are 0.
+
 Function to generate an index matrix for discrete character evolution models.
 Independent transition rates are labelled 1, 2, 3, etc., while diagonal entries are 0.
 }
@@ -35,8 +46,30 @@ The structure of the matrix depends on the specified model:
 }
 If ordered = TRUE, only transitions between adjacent states are permitted (i.e. |i - j| = 1).
 State labels (if provided) are used as row and column names of the matrix.
+
+This function constructs an index matrix suitable for use in likelihood-based discrete character models (e.g. Mk models).
+The structure of the matrix depends on the specified model:
+\itemize{
+  \item ER: All allowed transitions share a single rate.
+  \item SYM: Forward and reverse transitions share the same rate (q_ij = q_ji).
+  \item ASYM: All forward transitions (i < j) share one rate, and all backward transitions (i > j) share another rate.
+  \item ARD: All transitions are assigned independent rates.
+}
+If ordered = TRUE, only transitions between adjacent states are permitted (i.e. |i - j| = 1).
+State labels (if provided) are used as row and column names of the matrix.
 }
 \examples{
+# 3-state ER model
+get_index_matrix(model = "ER", states = 3)
+
+# 4-state SYM model with labels
+get_index_matrix(model = "SYM", states = c("A", "B", "C", "D"))
+
+# Ordered ASYM model
+get_index_matrix(model = "ASYM", ordered = TRUE, states = 4)
+
+# Fully parameterised ARD model
+get_index_matrix(model = "ARD", states = 3)
 # 3-state ER model
 get_index_matrix(model = "ER", states = 3)
 

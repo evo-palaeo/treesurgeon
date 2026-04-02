@@ -1292,8 +1292,6 @@ remove_part_info <- function(x) {
 #' cols[-c(mol_states, morph_states)] <- hcl.colors(n = length(cols[-c(mol_states, morph_states)]), palette = "Cividis")
 #' Heatmap(df[, 1:1500], row_names_side = "left", col = cols, na_col = "white", name = "states")
 #'
-#' @export
-#'
 #' FIX THIS - doesnt work if combining two partitions of the same type.
 #' Also doesnt work if combining nexdat.
 
@@ -1935,6 +1933,7 @@ multBrier <- function(prediction, truth) {
         stop("truth and prediction are of different dimensions!")
     }
     mb_score <- mean(rowSums((prediction - one_hot)^2))
+    
     return(mb_score)
 }
 
@@ -2054,6 +2053,7 @@ entropy <- function(x) {
 #' @param tips Index of tips used for cross validation. By default this is set to include all tips of the tree.
 #' @param type determines the reconstruction type. Either "joint" or "marginal".
 #' @param drop.tip logical. If TRUE, tip is dropped during model fitting.
+#' @param parallel logical. If TRUE, foreach is used to conduct the cross-validation in parallel. If FALSE, foreach is used to conduct the cross-validation in serial.
 #' @param ... optional arguments, including pi, the prior distribution at the root node (defaults to pi="equal"). Other options for pi include pi="fitzjohn" (which implements the prior distribution of FitzJohn et al. 2009), pi="estimated" (which finds the stationary distribution of state frequencies and sets that as the prior), or an arbitrary prior distribution specified by the user.
 #' @return A numeric vector reporting the mean Raw error, the Brier score and the mean log likelihood of the model.
 #' @details This function performs leave-one-out cross-validation using phytools::fitMk() and phytools::ancr(). By default, it iterates over each tip in the phylogenetic tree. In each iteration, the model is fitted after pruning the selected tip from the tree. The tip is then reintroduced with its state set as uncertain, and ancestral states — including the uncertain tip — are re-estimated using phytools::ancr() with the tips = TRUE option. The predicted state for the uncertain tip is compared to its true state, and the Raw error, Brier score, and log-likelihood are recorded. After completing all iterations, the function returns the mean Raw error, mean Brier score, and mean log-likelihood across all tips. Optionally, cross-validation can be restricted to a subset of tips by specifying the tips argument. If drop.tip is set to FALSE, the model is instead fitted to the full tree with the tip's state made uncertain, without pruning the tip from the tree. This approach is slightly faster but less statistically robust, as it can potentially introduce data leakage.
@@ -2073,52 +2073,70 @@ entropy <- function(x) {
 #' loo_cv(tree = vert_data, x = tp[[1]], model = "ER")
 #' loo_cv(tree = vert_data, x = tp[[1]], model = "ARD")
 #' stopCluster(cl)
-
 #' @export
 
-loo_cv <- function(tree, x, model = "ER", fixedQ = NULL, tips = seq(Ntip(tree)), type = "marginal", drop.tip = TRUE, ...) {
-    if (!type %in% c("joint", "marginal")) {
-        stop("type must be either 'joint' or 'marginal'!")
+loo_cv <- function(tree, x, model = "ER", fixedQ = NULL,
+                   tips = seq(Ntip(tree)),
+                   type = "marginal",
+                   drop.tip = TRUE,
+                   parallel = TRUE,
+                   ...) {
+
+  if (!type %in% c("joint", "marginal")) {
+    stop("type must be either 'joint' or 'marginal'!")
+  }
+
+  args.x <- list(...)
+
+  if (!is.matrix(x)) {
+    x <- to.matrix(x, sort(unique(x)))
+  }
+
+  x <- x[tree$tip.label, ]
+  m <- ncol(x)
+
+  `%op%` <- if (parallel) foreach::`%dopar%` else foreach::`%do%`
+
+  res <- foreach::foreach(i = tips, .combine = "cbind",
+                          .packages = "treesurgeon") %op% {
+
+    x2 <- x
+    x2[i, ] <- 1
+    true_state <- x[i, ]
+
+    if (drop.tip) {
+      tree_temp <- drop.tip(tree, tree$tip.label[i])
+      x_temp <- x[-i, , drop = FALSE]
+
+      object <- do.call(fitMk, c(
+        list(tree = tree_temp, x = x_temp,
+             model = model, fixedQ = fixedQ),
+        args.x))
+
+      object$data <- x2
+      object$tree <- tree
+
+    } else {
+      object <- do.call(fitMk, c(
+        list(tree = tree, x = x2,
+             model = model, fixedQ = fixedQ),
+        args.x))
     }
 
-    args.x <- list(...)
+    cv <- ancr(object, tips = TRUE, type = type)
 
-    if (!is.matrix(x)) {
-        x <- to.matrix(x, sort(unique(x)))
-    }
-    x <- x[tree$tip.label, ]
-    m <- ncol(x)
-    states <- colnames(x)
-
-    res <- foreach::foreach(i = tips, .combine = "cbind", .packages = "treesurgeon") %dopar% {
-        x2 <- x
-        x2[i, ] <- 1 # Set tip state to uncertain
-        true_state <- x[i, ]
-
-        if (drop.tip) {
-            tree_temp <- drop.tip(tree, tree$tip.label[i])
-            x_temp <- x[-i, , drop = FALSE]
-            object <- do.call(fitMk, c(list(tree = tree_temp, x = x_temp, model = model, fixedQ = fixedQ), args.x))
-            object$data <- x2
-            object$tree <- tree
-        } else {
-            object <- do.call(fitMk, c(list(tree = tree, x = x2, model = model, fixedQ = fixedQ), args.x))
-        }
-
-        cv <- ancr(object, tips = TRUE, type = type)
-
-        if (!is.matrix(cv$ace)) {
-            cv$ace <- to.matrix(cv$ace, seq_len(m))
-        }
-
-        c(
-            Raw = Raw(cv$ace[i, ], true_state),
-            Brier = Brier(cv$ace[i, ], true_state),
-            `mean logL` = object$logLik
-        )
+    if (!is.matrix(cv$ace)) {
+      cv$ace <- to.matrix(cv$ace, seq_len(m))
     }
 
-    rowMeans(res)
+    c(
+      Raw = Raw(cv$ace[i, ], true_state),
+      Brier = Brier(cv$ace[i, ], true_state),
+      `mean logL` = object$logLik
+    )
+  }
+
+  rowMeans(res)
 }
 
 

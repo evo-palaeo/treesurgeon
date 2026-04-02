@@ -46,4 +46,6 @@ cols[mol_states] <- hcl.colors(n = length(mol_states), palette = "zissou")
 cols[-c(mol_states, morph_states)] <- hcl.colors(n = length(cols[-c(mol_states, morph_states)]), palette = "Cividis")
 Heatmap(df[, 1:1500], row_names_side = "left", col = cols, na_col = "white", name = "states")
 
+FIX THIS - doesnt work if combining two partitions of the same type.
+Also doesnt work if combining nexdat.
 }
