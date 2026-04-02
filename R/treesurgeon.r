@@ -2098,7 +2098,7 @@ loo_cv <- function(tree, x, model = "ER", fixedQ = NULL,
   `%op%` <- if (parallel) foreach::`%dopar%` else foreach::`%do%`
 
   res <- foreach::foreach(i = tips, .combine = "cbind",
-                          .packages = "treesurgeon") %op% {
+                          .packages = c("treesurgeon", "phytools")) %op% {
 
     x2 <- x
     x2[i, ] <- 1
