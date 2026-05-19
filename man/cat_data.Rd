@@ -11,7 +11,7 @@ cat_data(..., use.part.info = FALSE, part.names = NULL)
 \itemize{
   \item lists of named character vectors (e.g. output from
   \code{ape::read.nexus.data()})
-  \item objects of class \code{"multi_nexdat"}
+  \item objects of class \code{"nexdat"} or \code{"multi_nexdat"}
 }}
 
 \item{use.part.info}{Logical. If \code{TRUE}, partition metadata are stored
