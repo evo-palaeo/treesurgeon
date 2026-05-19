@@ -34,8 +34,7 @@ single multi-partition object. Input data can include individual partitions
 }
 \details{
 This function is designed for combining phylogenetic datasets with partially
-overlapping taxon sampling, such as molecular, morphological and genomic
-partitions. Taxa absent from a partition are automatically coded as missing.
+overlapping taxon sampling, such as AA, DNA and morphological partitions. Taxa absent from a partition are automatically coded as missing.
 
 Partition datatypes are automatically inferred where possible and currently
 include:
@@ -53,73 +52,26 @@ Taxon names must match exactly across input datasets for sequences to be
 combined correctly.
 }
 \examples{
-data(Lavoue2016)
-
-## Combine molecular and morphological partitions
-x <- cat_data(
-    Lavoue2016$standard,
-    Lavoue2016$dna,
-    use.part.info = TRUE
-)
-
-## Add an additional partition
-x <- cat_data(
-    x,
-    Lavoue2016$protein,
-    use.part.info = TRUE
-)
-
-## Inspect partition metadata
-attr(x, "part.info")
-
-## Summarise missing data
-summary(x)
-
-## Export as nexus
-\dontrun{
-write_nexdat(x, "combined_data.nex")
-}
-
-## Visualise character occupancy
-\dontrun{
-if (!requireNamespace("ComplexHeatmap", quietly = TRUE)) {
-    BiocManager::install("ComplexHeatmap")
-}
-
-library(ComplexHeatmap)
-
-df <- t(as.data.frame(x))
-df <- tolower(df)
-
-df[df \%in\% c("?", "-", "n")] <- NA
-
-states <- as.character(na.omit(unique(as.character(df))))
-
-cols <- rep("x", length(states))
-names(cols) <- states
-
-morph_states <- suppressWarnings(
-    which(!is.na(as.numeric(names(cols))))
-)
-
-mol_states <- which(names(cols) \%in\% c("a", "c", "g", "t"))
-
-cols[morph_states] <- hcl.colors(
-    n = length(morph_states),
-    palette = "Hawaii"
-)
-
-cols[mol_states] <- hcl.colors(
-    n = length(mol_states),
-    palette = "Zissou 1"
-)
-
-Heatmap(
-    df[, 1:1500],
-    row_names_side = "left",
-    col = cols,
-    na_col = "white",
-    name = "states"
-)
-}
+#' data(Lavoue2016) 
+combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F) 
+## Visualise 
+if (!require("BiocManager", quietly = TRUE)) { 
+ install.packages("BiocManager") 
+} 
+BiocManager::install("ComplexHeatmap") 
+library(ComplexHeatmap) 
+df <- t(as.data.frame(combined_data)) 
+df <- tolower(df) 
+df[df == "?"] <- NA 
+df[df == "-"] <- NA
+df[df == "n"] <- NA #
+states <- as.character(na.omit(unique(as.character(df)))) 
+cols <- rep("x", length(states)) 
+names(cols) <- states 
+morph_states <- suppressWarnings(which(is.na(as.numeric(names(cols))) == F)) 
+mol_states <- which(names(cols) \%in\% c("a", "c", "g", "t")) 
+cols[morph_states] <- hcl.colors(n = length(morph_states), palette = "Hawaii") 
+cols[mol_states] <- hcl.colors(n = length(mol_states), palette = "zissou") 
+cols[-c(mol_states, morph_states)] <- hcl.colors(n = length(cols[-c(mol_states, morph_states)]), palette = "Cividis")
+Heatmap(df[, 1:1500], row_names_side = "left", col = cols, na_col = "white", name = "states")
 }
