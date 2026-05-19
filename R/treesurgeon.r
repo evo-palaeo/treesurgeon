@@ -1228,121 +1228,879 @@ gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 }
 
 
-#' remove partition information
+#' Remove partition information
 #'
-#' Function to remove partition information from a 'multi_nexdat' object.
-#' @param x an object of class 'multi_nexdat'.
-#' @return an object of class 'nexdat'.
-#' @details This function removes partition information from a 'multi_nexdat' object, thereby converting it into a 'nexdat' object. Sequences from seperate partitions are conctenated.
+#' Concatenate all partitions in a \code{"multi_nexdat"} object into a
+#' single unpartitioned \code{"nexdat"} object.
+#'
+#' @param x An object of class \code{"multi_nexdat"}.
+#'
+#' @return An object of class \code{"nexdat"} in which all partitions have
+#' been concatenated into a single character matrix.
+#'
+#' @details
+#' This function removes partition structure from a
+#' \code{"multi_nexdat"} object by concatenating sequences across all
+#' partitions for each taxon.
+#'
+#' Taxa absent from a partition are automatically padded with missing
+#' data characters (\code{"?"}) to preserve alignment length.
+#'
+#' Partition metadata stored in the \code{"part.info"} attribute are
+#' discarded.
+#'
 #' @examples
 #' data(Lavoue2016)
-#' partitioned_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = T)
-#' concatenated_data <- remove_part_info(partitioned_data)
+#'
+#' x <- cat_data(
+#'     Lavoue2016$standard,
+#'     Lavoue2016$dna,
+#'     use.part.info = TRUE
+#' )
+#'
+#' y <- remove_part_info(x)
+#'
+#' class(y)
 #'
 #' @export
 
-
 remove_part_info <- function(x) {
-    if (any(class(x) == "multi_nexdat") == F) {
-        stop("Object is not a multi_nexdat!")
+
+    if (!inherits(x, "multi_nexdat")) {
+        stop("Object is not class 'multi_nexdat'")
     }
-    x2 <- list()
+
     taxa <- sort(unique(unlist(lapply(x, names))))
-    for (j in taxa) {
-        char <- character()
-        for (i in 1:length(x)) {
-            char <- c(char, x[[i]][[j]])
+
+    out <- vector("list", length(taxa))
+
+    names(out) <- taxa
+
+    for (tx in taxa) {
+
+        seqx <- character()
+
+        for (i in seq_along(x)) {
+
+            part <- x[[i]]
+
+            # partition length
+            part_length <- length(part[[1]])
+
+            if (is.null(part[[tx]])) {
+
+                seqx <- c(
+                    seqx,
+                    rep("?", part_length)
+                )
+
+            } else {
+
+                seqx <- c(
+                    seqx,
+                    part[[tx]]
+                )
+            }
         }
-        x2[[j]] <- char
+
+        out[[tx]] <- seqx
     }
-    class(x2) <- c("nexdat", "list")
-    return(x2)
+
+    # remove partition metadata
+    attr(out, "part.info") <- NULL
+
+    class(out) <- c("nexdat", "list")
+
+    return(out)
+}
+
+#' Drop OTUs from a phylogenetic dataset
+#'
+#' Remove one or more OTUs (taxa) from a \code{"nexdat"} or
+#' \code{"multi_nexdat"} object.
+#'
+#' @param x An object of class \code{"nexdat"} or
+#' \code{"multi_nexdat"}.
+#'
+#' @param taxa A character vector of taxon names to remove.
+#'
+#' @return An object of the same class as \code{x} with the specified
+#' taxa removed.
+#'
+#' @details
+#' This function removes OTUs from phylogenetic character matrices while
+#' preserving partition structure and metadata.
+#'
+#' For objects of class \code{"multi_nexdat"}, taxa are removed from all
+#' partitions simultaneously. Partition metadata stored in the
+#' \code{"part.info"} attribute are retained.
+#'
+#' Taxa names must exactly match those present in the dataset.
+#'
+#' @examples
+#' data(Lavoue2016)
+#'
+#' x <- cat_data(
+#'     Lavoue2016$standard,
+#'     Lavoue2016$dna,
+#'     use.part.info = TRUE
+#' )
+#'
+#' ## Remove taxa
+#' y <- drop_otus(
+#'     x,
+#'     taxa = c("Danio_rerio", "Esox_lucius")
+#' )
+#'
+#' summary(y)
+#'
+#' @export
+#' 
+drop_otus <- function(x, taxa) {
+
+    if (!inherits(x, c("nexdat", "multi_nexdat"))) {
+        stop("Object must be class 'nexdat' or 'multi_nexdat'")
+    }
+
+    taxa <- unique(taxa)
+
+    # ------------------------------------------------------------
+    # SINGLE nexdat
+    # ------------------------------------------------------------
+
+    if (inherits(x, "nexdat")) {
+
+        keep <- !(names(x) %in% taxa)
+
+        x <- x[keep]
+
+        return(x)
+    }
+
+    # ------------------------------------------------------------
+    # MULTI nexdat
+    # ------------------------------------------------------------
+
+    out <- lapply(x, function(part) {
+
+        keep <- !(names(part) %in% taxa)
+
+        part[keep]
+    })
+
+    # preserve metadata
+    names(out) <- names(x)
+
+    class(out) <- class(x)
+
+    attr(out, "part.info") <- attr(x, "part.info")
+
+    return(out)
+}
+
+#' Keep OTUs in a phylogenetic dataset
+#'
+#' Retain one or more OTUs (taxa) from a \code{"nexdat"} or
+#' \code{"multi_nexdat"} object while removing all others.
+#'
+#' @param x An object of class \code{"nexdat"} or
+#' \code{"multi_nexdat"}.
+#'
+#' @param taxa A character vector of taxon names to retain.
+#'
+#' @return An object of the same class as \code{x} containing only the
+#' specified taxa.
+#'
+#' @details
+#' This function subsets phylogenetic character matrices to a specified
+#' set of OTUs while preserving partition structure and metadata.
+#'
+#' For objects of class \code{"multi_nexdat"}, taxa are retained across
+#' all partitions simultaneously. Partition metadata stored in the
+#' \code{"part.info"} attribute are retained.
+#'
+#' Taxa names must exactly match those present in the dataset.
+#'
+#' @examples
+#' data(Lavoue2016)
+#'
+#' x <- cat_data(
+#'     Lavoue2016$standard,
+#'     Lavoue2016$dna,
+#'     use.part.info = TRUE
+#' )
+#'
+#' ## Retain a subset of taxa
+#' y <- keep_otus(
+#'     x,
+#'     taxa = c("Danio_rerio", "Esox_lucius")
+#' )
+#'
+#' summary(y)
+#'
+#' @export
+#' 
+keep_otus <- function(x, taxa) {
+
+    if (!inherits(x, c("nexdat", "multi_nexdat"))) {
+        stop("Object must be class 'nexdat' or 'multi_nexdat'")
+    }
+
+    taxa <- unique(taxa)
+
+    if (inherits(x, "nexdat")) {
+
+        return(x[names(x) %in% taxa])
+    }
+
+    out <- lapply(x, function(part) {
+
+        part[names(part) %in% taxa]
+    })
+
+    names(out) <- names(x)
+
+    class(out) <- class(x)
+
+    attr(out, "part.info") <- attr(x, "part.info")
+
+    return(out)
+}
+
+#' Write phylogenetic data to a Nexus file
+#'
+#' Export a \code{"nexdat"} or \code{"multi_nexdat"} object to a
+#' Nexus-formatted alignment file.
+#'
+#' @param x An object of class \code{"nexdat"} or
+#' \code{"multi_nexdat"}.
+#'
+#' @param file Character string giving the output file name.
+#'
+#' @param separate.files Logical. If \code{TRUE}, each partition is
+#' written to a separate Nexus file. If \code{FALSE}, all partitions are
+#' written to a single combined Nexus file using mixed datatype format.
+#'
+#' @param append.partition.labels Logical. If \code{TRUE}, partition
+#' names are written as Nexus comments before each partition block in
+#' interleaved output.
+#'
+#' @return Invisibly returns the output file path(s).
+#'
+#' @details
+#' This function writes phylogenetic character matrices in standard
+#' Nexus format with support for partitioned and mixed datatype datasets.
+#'
+#' For objects of class \code{"multi_nexdat"}, partitions are written
+#' using partition-wise interleaving, where each partition is output as
+#' a separate alignment block within the Nexus matrix.
+#'
+#' Partition datatypes are obtained from the
+#' \code{"part.info"} attribute and are automatically written using
+#' Nexus mixed datatype syntax.
+#'
+#' Taxa absent from individual partitions are automatically padded with
+#' missing data characters (\code{"?"}) to preserve matrix dimensions.
+#'
+#' When \code{separate.files = TRUE}, one Nexus file is written per
+#' partition using the partition names stored in the object.
+#'
+#' @examples
+#' data(Lavoue2016)
+#'
+#' ## Create partitioned dataset
+#' x <- cat_data(
+#'     Lavoue2016$standard,
+#'     Lavoue2016$dna,
+#'     use.part.info = TRUE
+#' )
+#'
+#' ## Write combined Nexus file
+#' \dontrun{
+#' write_nexdat(
+#'     x,
+#'     file = "combined_data.nex"
+#' )
+#' }
+#'
+#' ## Write one Nexus file per partition
+#' \dontrun{
+#' write_nexdat(
+#'     x,
+#'     file = "partitioned_data.nex",
+#'     separate.files = TRUE
+#' )
+#' }
+#'
+#' @export
+#' 
+#' 
+write_nexdat <- function(x,
+                         file = "output.nex",
+                         separate.files = FALSE,
+                         append.partition.labels = TRUE) {
+
+    if (!inherits(x, c("nexdat", "multi_nexdat"))) {
+        stop("Object must be class 'nexdat' or 'multi_nexdat'")
+    }
+
+    # ------------------------------------------------------------
+    # Helper function for writing a single nexus file
+    # ------------------------------------------------------------
+
+    write_single_nexus <- function(dat,
+                                   outfile,
+                                   datatype = "dna",
+                                   partition_name = NULL) {
+
+        taxa <- names(dat)
+
+        ntax <- length(dat)
+        nchar <- length(dat[[1]])
+
+        seqs <- lapply(dat, paste0, collapse = "")
+
+        con <- file(outfile, open = "w")
+
+        on.exit(close(con))
+
+        cat("#NEXUS\n", file = con)
+
+        cat(
+            paste0(
+                "[Data written by write_nexdat, ",
+                Sys.time(),
+                "]\n"
+            ),
+            file = con
+        )
+
+        cat("BEGIN DATA;\n", file = con)
+
+        cat(
+            paste0(
+                "  DIMENSIONS NTAX=",
+                ntax,
+                " NCHAR=",
+                nchar,
+                ";\n"
+            ),
+            file = con
+        )
+
+        cat(
+            paste0(
+                "  FORMAT DATATYPE=",
+                datatype,
+                " MISSING=? GAP=- INTERLEAVE=no;\n"
+            ),
+            file = con
+        )
+
+        cat("  MATRIX\n", file = con)
+
+        if (!is.null(partition_name) &&
+            append.partition.labels) {
+
+            cat(
+                paste0("[", partition_name, "]\n"),
+                file = con
+            )
+        }
+
+        for (tx in taxa) {
+
+            cat(
+                sprintf(
+                    "    %-30s %s\n",
+                    tx,
+                    seqs[[tx]]
+                ),
+                file = con
+            )
+        }
+
+        cat("  ;\n", file = con)
+        cat("END;\n", file = con)
+    }
+
+    # ------------------------------------------------------------
+    # SINGLE nexdat OBJECT
+    # ------------------------------------------------------------
+
+    if (inherits(x, "nexdat")) {
+
+        write_single_nexus(
+            dat = x,
+            outfile = file,
+            datatype = "dna"
+        )
+
+        return(invisible(file))
+    }
+
+    # ------------------------------------------------------------
+    # MULTI nexdat OBJECT
+    # ------------------------------------------------------------
+
+    part_info <- attr(x, "part.info")
+
+    if (is.null(part_info)) {
+
+        part_info <- data.frame(
+            partition = names(x),
+            type = "dna",
+            stringsAsFactors = FALSE
+        )
+    }
+
+    # ------------------------------------------------------------
+    # WRITE SEPARATE FILES
+    # ------------------------------------------------------------
+
+    if (separate.files) {
+
+        for (i in seq_along(x)) {
+
+            part_name <- names(x)[i]
+
+            datatype <- part_info$type[
+                match(part_name, part_info$partition)
+            ]
+
+            outfile <- paste0(
+                tools::file_path_sans_ext(file),
+                "_",
+                part_name,
+                ".nex"
+            )
+
+            write_single_nexus(
+                dat = x[[i]],
+                outfile = outfile,
+                datatype = datatype,
+                partition_name = part_name
+            )
+        }
+
+        return(invisible(TRUE))
+    }
+
+    # ------------------------------------------------------------
+    # WRITE COMBINED FILE
+    # ------------------------------------------------------------
+
+    taxa <- sort(unique(unlist(lapply(x, names))))
+
+    # build combined partition-wise sequences
+    combined <- list()
+
+    for (tx in taxa) {
+
+        combined[[tx]] <- list()
+
+        for (i in seq_along(x)) {
+
+            part <- x[[i]]
+
+            if (is.null(part[[tx]])) {
+
+                combined[[tx]][[i]] <- paste0(
+                    rep("?", length(part[[1]])),
+                    collapse = ""
+                )
+
+            } else {
+
+                combined[[tx]][[i]] <- paste0(
+                    part[[tx]],
+                    collapse = ""
+                )
+            }
+        }
+    }
+
+    # ------------------------------------------------------------
+    # Calculate partition coordinates
+    # ------------------------------------------------------------
+
+    part_lengths <- vapply(
+        x,
+        function(z) length(z[[1]]),
+        numeric(1)
+    )
+
+    starts <- cumsum(c(1, head(part_lengths, -1)))
+
+    ends <- cumsum(part_lengths)
+
+    datatype_string <- paste0(
+        part_info$type,
+        ":",
+        starts,
+        "-",
+        ends,
+        collapse = ", "
+    )
+
+    ntax <- length(taxa)
+    nchar <- sum(part_lengths)
+
+    # ------------------------------------------------------------
+    # Open file connection
+    # ------------------------------------------------------------
+
+    con <- file(file, open = "w")
+
+    on.exit(close(con))
+
+    # ------------------------------------------------------------
+    # Write nexus header
+    # ------------------------------------------------------------
+
+    cat("#NEXUS\n", file = con)
+
+    cat(
+        paste0(
+            "[Data written by write_nexdat, ",
+            Sys.time(),
+            "]\n"
+        ),
+        file = con
+    )
+
+    cat("BEGIN DATA;\n", file = con)
+
+    cat(
+        paste0(
+            "  DIMENSIONS NTAX=",
+            ntax,
+            " NCHAR=",
+            nchar,
+            ";\n"
+        ),
+        file = con
+    )
+
+    cat(
+        paste0(
+            "  FORMAT DATATYPE=mixed(",
+            datatype_string,
+            ") MISSING=? GAP=- INTERLEAVE=yes;\n"
+        ),
+        file = con
+    )
+
+    cat("  MATRIX\n\n", file = con)
+
+    # ------------------------------------------------------------
+    # Partition-wise interleaving
+    # ------------------------------------------------------------
+
+    for (i in seq_along(x)) {
+
+        part_name <- names(x)[i]
+
+        if (append.partition.labels) {
+
+            cat(
+                paste0("[", part_name, "]\n"),
+                file = con
+            )
+        }
+
+        for (tx in taxa) {
+
+            cat(
+                sprintf(
+                    "    %-30s %s\n",
+                    tx,
+                    combined[[tx]][[i]]
+                ),
+                file = con
+            )
+        }
+
+        cat("\n", file = con)
+    }
+
+    # ------------------------------------------------------------
+    # Close matrix
+    # ------------------------------------------------------------
+
+    cat("  ;\n", file = con)
+    cat("END;\n", file = con)
+
+    invisible(file)
 }
 
 
-#' Combine phylogenetic data
+#' Combine phylogenetic data partitions
 #'
-#' Function to combine lists of phylogenetic data (e.g. those output by the ape function read.nexus.data()).
-#' @param ... two or more objects of class 'list' comprising named vectors of phylogenetic characters.
-#' @param use.part.info logical. If TRUE, the function resturns a seperate list for each input list.
-#' @param part.names a character vector of partition names e.g. 'dna', 'standard', 'protein'. If not supplied, the function will attempt to guess the correct partition type.
-#' @return A list, or multiple lists, of phylogenetic data of length T, where T equals the sum of unique taxa in the input lists.
-#' @details This function can be used to combine seperate lists of phylogenetic characters with non-overlapping taxa. If a taxon does not occur in all input lists, it will be coded as missing '?' for those input list(s). Can be used, for example, to combine molecular and morphological datasets with non-overlapping taxa. Note that taxa must be named identically in each input for the data to be combined succesfully.
+#' Concatenate phylogenetic character data from multiple partitions into a
+#' single multi-partition object. Input data can include individual partitions
+#' (lists of named character vectors) or existing objects of class
+#' `nexdat` or `"multi_nexdat"`. Missing taxa are automatically padded with missing data
+#' (`"?"`) so that all partitions contain the same set of OTUs.
+#'
+#' @param ... Two or more phylogenetic data objects. Inputs may be:
+#' \itemize{
+#'   \item lists of named character vectors (e.g. output from
+#'   \code{ape::read.nexus.data()})
+#'   \item objects of class \code{"multi_nexdat"}
+#' }
+#'
+#' @param use.part.info Logical. If \code{TRUE}, partition metadata are stored
+#' in the returned object as the \code{"part.info"} attribute.
+#'
+#' @param part.names Optional character vector giving partition names. If not
+#' supplied, partition names are inherited from the input object names.
+#'
+#' @return An object of class \code{"multi_nexdat"} containing one list per
+#' partition. Partition metadata are stored in the \code{"part.info"}
+#' attribute when \code{use.part.info = TRUE}.
+#'
+#' @details
+#' This function is designed for combining phylogenetic datasets with partially
+#' overlapping taxon sampling, such as molecular, morphological and genomic
+#' partitions. Taxa absent from a partition are automatically coded as missing.
+#'
+#' Partition datatypes are automatically inferred where possible and currently
+#' include:
+#' \itemize{
+#'   \item \code{"dna"}
+#'   \item \code{"rna"}
+#'   \item \code{"protein"}
+#'   \item \code{"standard"}
+#' }
+#'
+#' Existing \code{"multi_nexdat"} objects can be extended by supplying them as
+#' inputs alongside additional partitions.
+#'
+#' Taxon names must match exactly across input datasets for sequences to be
+#' combined correctly.
+#'
 #' @examples
 #' data(Lavoue2016)
-#' combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F)
-#' ## Visualise
-#' if (!require("BiocManager", quietly = TRUE)) {
-#'     install.packages("BiocManager")
+#'
+#' ## Combine molecular and morphological partitions
+#' x <- cat_data(
+#'     Lavoue2016$standard,
+#'     Lavoue2016$dna,
+#'     use.part.info = TRUE
+#' )
+#'
+#' ## Add an additional partition
+#' x <- cat_data(
+#'     x,
+#'     Lavoue2016$protein,
+#'     use.part.info = TRUE
+#' )
+#'
+#' ## Inspect partition metadata
+#' attr(x, "part.info")
+#'
+#' ## Summarise missing data
+#' summary(x)
+#'
+#' ## Export as nexus
+#' \dontrun{
+#' write_nexdat(x, "combined_data.nex")
 #' }
-#' BiocManager::install("ComplexHeatmap")
+#'
+#' ## Visualise character occupancy
+#' \dontrun{
+#' if (!requireNamespace("ComplexHeatmap", quietly = TRUE)) {
+#'     BiocManager::install("ComplexHeatmap")
+#' }
+#'
 #' library(ComplexHeatmap)
-#' df <- t(as.data.frame(combined_data))
+#'
+#' df <- t(as.data.frame(x))
 #' df <- tolower(df)
-#' df[df == "?"] <- NA
-#' df[df == "-"] <- NA
-#' df[df == "n"] <- NA
+#'
+#' df[df %in% c("?", "-", "n")] <- NA
+#'
 #' states <- as.character(na.omit(unique(as.character(df))))
+#'
 #' cols <- rep("x", length(states))
 #' names(cols) <- states
-#' morph_states <- suppressWarnings(which(is.na(as.numeric(names(cols))) == F))
-#' mol_states <- which(names(cols) %in% c("a", "c", "g", "t"))
-#' cols[morph_states] <- hcl.colors(n = length(morph_states), palette = "Hawaii")
-#' cols[mol_states] <- hcl.colors(n = length(mol_states), palette = "zissou")
-#' cols[-c(mol_states, morph_states)] <- hcl.colors(n = length(cols[-c(mol_states, morph_states)]), palette = "Cividis")
-#' Heatmap(df[, 1:1500], row_names_side = "left", col = cols, na_col = "white", name = "states")
 #'
-#' FIX THIS - doesnt work if combining two partitions of the same type.
-#' Also doesnt work if combining nexdat.
+#' morph_states <- suppressWarnings(
+#'     which(!is.na(as.numeric(names(cols))))
+#' )
+#'
+#' mol_states <- which(names(cols) %in% c("a", "c", "g", "t"))
+#'
+#' cols[morph_states] <- hcl.colors(
+#'     n = length(morph_states),
+#'     palette = "Hawaii"
+#' )
+#'
+#' cols[mol_states] <- hcl.colors(
+#'     n = length(mol_states),
+#'     palette = "Zissou 1"
+#' )
+#'
+#' Heatmap(
+#'     df[, 1:1500],
+#'     row_names_side = "left",
+#'     col = cols,
+#'     na_col = "white",
+#'     name = "states"
+#' )
+#' }
+#' @export
 
-cat_data <- function(..., use.part.info = F, part.names = NULL) {
-    partitions <- list(...)
-    taxa <- sort(unique(unlist(lapply(partitions, names))))
-    new_data <- list()
-    for (i in 1:length(partitions)) {
-        partitions[[i]] <- lapply(partitions[[i]], tolower)
-        new_data[[i]] <- list()
-        # attempt to guess partition names
+cat_data <- function(..., use.part.info = FALSE, part.names = NULL) {
 
-        if (is.null(part.names)) {
-            standard_count <- 0
-            dna_count <- 0
-            rna_count <- 0
-            protein_count <- 0
-            px <- unlist(partitions[[i]])
-            # remove missing data
-            px <- px[!(px %in% c("?", "n", "x", "-"))]
-            px_l <- length(px)
+    args <- list(...)
+    arg_exprs <- as.list(substitute(list(...)))[-1]
+    arg_names <- vapply(arg_exprs, deparse, character(1))
 
-            if (length(suppressWarnings(na.omit(as.numeric(px)))) / px_l > 0.9) {
-                standard_count <- standard_count + 1
-                names(new_data)[[i]] <- paste0("STANDARD_", standard_count)
-            } else if (length(px[px %in% c("a", "c", "g", "t", "u")]) / px_l > 0.9) {
-                if (length(px[px == "u"]) > 0) {
-                    rna_count <- rna_count + 1
-                    names(new_data)[[i]] <- paste0("RNA_", rna_count)
-                } else {
-                    dna_count <- dna_count + 1
-                    names(new_data)[[i]] <- paste0("DNA_", dna_count)
-                }
-            } else {
-                protein_count <- protein_count + 1
-                names(new_data)[[i]] <- paste0("PROTEIN_", protein_count)
+    # ------------------------------------------------------------
+    # Flatten inputs
+    # Allows mixing:
+    # - single partitions (lists)
+    # - multi_nexdat objects
+    # ------------------------------------------------------------
+
+    partitions <- list()
+    inferred_names <- character()
+
+    for (i in seq_along(args)) {
+
+        obj <- args[[i]]
+        obj_name <- arg_names[i]
+
+        # Existing multi_nexdat object
+        if (inherits(obj, "multi_nexdat")) {
+
+            obj_parts <- obj
+
+            # preserve existing partition names
+            obj_part_names <- names(obj_parts)
+
+            if (is.null(obj_part_names)) {
+                obj_part_names <- paste0(obj_name, "_", seq_along(obj_parts))
             }
-        }
-        names(partitions) <- tolower(part.names)
-        for (j in taxa) {
-            if (is.null(partitions[[i]][[j]])) {
-                new_data[[i]][[j]] <- rep("?", length(partitions[[i]][[1]]))
-            } else {
-                new_data[[i]][[j]] <- partitions[[i]][[j]]
-            }
+
+            partitions <- c(partitions, obj_parts)
+            inferred_names <- c(inferred_names, obj_part_names)
+
+        } else {
+
+            # Single partition list
+            partitions <- c(partitions, list(obj))
+            inferred_names <- c(inferred_names, obj_name)
         }
     }
+
+    # User-supplied names override inferred names
+    if (!is.null(part.names)) {
+        if (length(part.names) != length(partitions)) {
+            stop("Length of 'part.names' must equal number of partitions.")
+        }
+
+        inferred_names <- part.names
+    }
+
+    # Ensure unique names
+    inferred_names <- make.unique(inferred_names)
+
+    # ------------------------------------------------------------
+    # Get all taxa
+    # ------------------------------------------------------------
+
+    taxa <- sort(unique(unlist(lapply(partitions, names))))
+
+    new_data <- vector("list", length(partitions))
+
+    part.info <- data.frame(
+        partition = character(length(partitions)),
+        type = character(length(partitions)),
+        stringsAsFactors = FALSE
+    )
+
+    # ------------------------------------------------------------
+    # Process partitions
+    # ------------------------------------------------------------
+
+    for (i in seq_along(partitions)) {
+
+        partitions[[i]] <- lapply(partitions[[i]], tolower)
+
+        px <- unlist(partitions[[i]])
+
+        # remove missing data
+        px <- px[!(px %in% c("?", "n", "x", "-"))]
+
+        # determine datatype
+        if (length(px) == 0) {
+
+            datatype <- "unknown"
+
+        } else if (
+            length(suppressWarnings(na.omit(as.numeric(px)))) / length(px) > 0.9
+        ) {
+
+            datatype <- "standard"
+
+        } else if (
+            length(px[px %in% c("a", "c", "g", "t", "u")]) / length(px) > 0.9
+        ) {
+
+            if ("u" %in% px) {
+                datatype <- "rna"
+            } else {
+                datatype <- "dna"
+            }
+
+        } else {
+
+            datatype <- "protein"
+        }
+
+        part.info$partition[i] <- inferred_names[i]
+        part.info$type[i] <- datatype
+
+        # align taxa
+        new_part <- list()
+
+        part_length <- length(partitions[[i]][[1]])
+
+        for (tx in taxa) {
+
+            if (is.null(partitions[[i]][[tx]])) {
+
+                new_part[[tx]] <- rep("?", part_length)
+
+            } else {
+
+                new_part[[tx]] <- partitions[[i]][[tx]]
+            }
+        }
+
+        new_data[[i]] <- new_part
+    }
+
+    names(new_data) <- inferred_names
+
     class(new_data) <- c("multi_nexdat", "list")
-    if (use.part.info == F) {
+
+    # ------------------------------------------------------------
+    # Store partition info
+    # ------------------------------------------------------------
+
+    if (use.part.info) {
+
+        attr(new_data, "part.info") <- part.info
+
+    } else {
+
         new_data <- remove_part_info(new_data)
     }
+
     return(new_data)
 }
 
@@ -1741,125 +2499,355 @@ dist_m <- function(trees, method, slices = 3, normalise = F) {
 }
 
 
-#' summary.nexdat
+#' Summarise a nexdat object
 #'
-#' Function to sumarise an object of class 'nexdat'.
-#' @param x an object of class 'nexdat'.
-#' @return An object of class 'summary.nexdat'.
-#' @details This function returns the proportion of missing characters and proportion of gaps per taxon.
+#' Summarise taxon occupancy, missing data and gap proportions for a
+#' phylogenetic character matrix.
+#'
+#' @param x An object of class \code{"nexdat"}.
+#'
+#' @return An object of class \code{"summary_nexdat"} containing summary
+#' statistics for the dataset and per-taxon missing data information.
+#'
+#' @details
+#' This function calculates:
+#' \itemize{
+#'   \item the number of taxa
+#'   \item the number of characters
+#'   \item the proportion of missing characters per taxon
+#'   \item the proportion of gaps per taxon
+#' }
+#'
+#' Missing characters are defined as:
+#' \code{"?"}, \code{"n"} and \code{"x"}.
+#'
+#' Gap characters are defined as:
+#' \code{"-"}.
+#'
 #' @examples
 #' data(Lavoue2016)
+#'
 #' summary(Lavoue2016$dna)
 #'
 #' @export
 
-summary.nexdat <- function(x) {
-    names(x) <- tolower(names(x))
-    res <- list()
-    if (any(class(x) == "nexdat") == F) {
-        warning("Object is not class nexdat")
+summary.nexdat <- function(x, ...) {
+
+    if (!inherits(x, "nexdat")) {
+        warning("Object is not class 'nexdat'")
     }
 
-    # summarise combined data
-
     x <- lapply(x, tolower)
-    comb_data <- x
-    missing <- lapply(comb_data, function(z) which(z == "?" | z == "n" | z == "x"))
-    gaps <- lapply(comb_data, function(z) which(z == "-"))
-    NCHAR <- NA
-    NTAX <- NA
-    res[[1]] <- c("Ntax" = length(comb_data), "Nchar" = length(comb_data[[1]]))
-    res[[2]] <- as.matrix(data.frame("Ntax" = NTAX, "Nchar" = NCHAR))
-    names(res) <- c("data", "partitions")
 
-    prop_missing <- unlist(lapply(missing, function(z) round(length(z) / res[[1]][[2]], 2)))
-    prop_gaps <- unlist(lapply(gaps, function(z) round(length(z) / res[[1]][[2]], 2)))
-    res[[3]] <- as.matrix(data.frame("missing" = prop_missing, "gaps" = prop_gaps))
-    names(res)[[3]] <- "total"
+    ntax <- length(x)
+    nchar <- length(x[[1]])
+
+    taxa <- names(x)
+
+    # ------------------------------------------------------------
+    # calculate missing data
+    # ------------------------------------------------------------
+
+    prop_missing <- vapply(
+        x,
+        function(z) {
+            round(
+                sum(z %in% c("?", "n", "x")) / length(z),
+                4
+            )
+        },
+        numeric(1)
+    )
+
+    # ------------------------------------------------------------
+    # calculate gaps
+    # ------------------------------------------------------------
+
+    prop_gaps <- vapply(
+        x,
+        function(z) {
+            round(
+                sum(z == "-") / length(z),
+                4
+            )
+        },
+        numeric(1)
+    )
+
+    # ------------------------------------------------------------
+    # overall summary
+    # ------------------------------------------------------------
+
+    overall <- data.frame(
+        Ntax = ntax,
+        Nchar = nchar
+    )
+
+    # ------------------------------------------------------------
+    # per-taxon summary
+    # ------------------------------------------------------------
+
+    total <- data.frame(
+        taxon = taxa,
+        missing = prop_missing,
+        gaps = prop_gaps,
+        row.names = taxa,
+        stringsAsFactors = FALSE
+    )
+
+    total$taxon <- NULL
+
+    # ------------------------------------------------------------
+    # output
+    # ------------------------------------------------------------
+
+    res <- list(
+        data = overall,
+        total = total
+    )
+
     class(res) <- "summary_nexdat"
+
     return(res)
 }
 
 
-#' summary.multi_nexdat
+#' Summarise a multi-partition phylogenetic dataset
 #'
-#' Function to sumarise an object of class 'multi_nexdat'.
-#' @param x an object of class 'multi_nexdat'.
-#' @return An object of class 'summary.nexdat'.
-#' @details This function returns the proportion of missing characters and proportion of gaps per taxon. If partitions are specidied, the function also returns the proportion of missing data, gaps, ambiguous codings (e.g. polymorphic characters, characters that are coded as uncertain between two or more states) and unamibiguous characters per taxon per partition.
+#' Summarise taxon occupancy, missing data and partition statistics for a
+#' \code{"multi_nexdat"} object.
+#'
+#' @param object An object of class \code{"multi_nexdat"}.
+#'
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return An object of class \code{"summary_nexdat"} containing:
+#' \itemize{
+#'   \item \code{data}: overall dataset statistics
+#'   \item \code{partitions}: per-partition summary statistics
+#'   \item \code{taxon_missing}: a taxon-by-partition matrix of
+#'   missing data proportions
+#' }
+#'
+#' @details
+#' This function summarises partitioned phylogenetic datasets and
+#' calculates:
+#' \itemize{
+#'   \item the total number of taxa
+#'   \item the total number of characters
+#'   \item the number of partitions
+#'   \item partition-specific character counts
+#'   \item partition-specific missing data proportions
+#'   \item partition-specific gap proportions
+#'   \item taxon occupancy across partitions
+#' }
+#'
+#' Missing characters are defined as:
+#' \code{"?"}, \code{"n"} and \code{"x"}.
+#'
+#' Gap characters are defined as:
+#' \code{"-"}.
+#'
+#' Taxa absent from a partition are treated as completely missing for
+#' that partition.
+#'
+#' Partition metadata are recovered from the
+#' \code{"part.info"} attribute where available.
+#'
+#' The \code{taxon_missing} component contains the proportion of missing
+#' characters for each taxon in each partition and can be used for
+#' occupancy filtering, quality control and visualisation of phylogenomic
+#' completeness.
+#'
 #' @examples
 #' data(Lavoue2016)
-#' summary(Lavoue2016)
+#'
+#' ## Create partitioned dataset
+#' x <- cat_data(
+#'     Lavoue2016$standard,
+#'     Lavoue2016$dna,
+#'     use.part.info = TRUE
+#' )
+#'
+#' ## Summarise dataset
+#' s <- summary(x)
+#'
+#' ## Overall statistics
+#' s$data
+#'
+#' ## Partition statistics
+#' s$partitions
+#'
+#' ## Taxon occupancy matrix
+#' s$taxon_missing
 #'
 #' @export
 
-summary.multi_nexdat <- function(x) {
-    # check if object is class 'multi_nexdat'
-    if (any(class(x) == "multi_nexdat") == F) {
-        warning("Object is not class multi_nexdat")
+summary.multi_nexdat <- function(object, ...) {
+
+    x <- object
+
+    if (!inherits(x, "multi_nexdat")) {
+        stop("Object is not class 'multi_nexdat'")
     }
 
-    # list to store results
-    res <- list()
+    part_names <- names(x)
 
-    # check if partitions have names.
-    if (is.null(names(x))) {
-        stop("partition names not included. Partitions should be named 'standard', 'dna' or 'protein'!")
-    } else {
-        names(x) <- tolower(names(x))
+    if (is.null(part_names)) {
+        part_names <- paste0("partition_", seq_along(x))
     }
 
-    # check if partitions are names anything other than 'standard', 'dna' or 'protein'.
-    Pnames <- length(setdiff(names(x), c("standard", "dna", "protein")))
-    if (Pnames > 0) {
-        warning(paste(Pnames, "partition name(s) not recognised. Partitions should be named 'standard', 'dna' or 'protein'."), sep = "")
+    # ------------------------------------------------------------
+    # recover partition metadata
+    # ------------------------------------------------------------
+
+    part_info <- attr(x, "part.info")
+
+    if (is.null(part_info)) {
+
+        part_info <- data.frame(
+            partition = part_names,
+            type = NA_character_,
+            stringsAsFactors = FALSE
+        )
     }
 
-    # summarise combined data
-    comb_data <- remove_part_info(x)
-    missing <- lapply(comb_data, function(z) which(z == "?" | z == "n" | z == "x"))
-    gaps <- lapply(comb_data, function(z) which(z == "-"))
-    NCHAR <- unlist(lapply(x, function(z) length(z[[1]])))
-    NTAX <- unlist(lapply(x, function(z) length(z)))
+    taxa <- sort(unique(unlist(lapply(x, names))))
 
-    res[[1]] <- c("Ntax" = length(comb_data), "Nchar" = length(comb_data[[1]]))
-    res[[2]] <- as.matrix(data.frame("Ntax" = NTAX, "Nchar" = NCHAR))
-    names(res) <- c("data", "partitions")
+    # ------------------------------------------------------------
+    # overall summary
+    # ------------------------------------------------------------
 
-    prop_missing <- unlist(lapply(missing, function(z) round(length(z) / res[[1]][[2]], 2)))
-    prop_gaps <- unlist(lapply(gaps, function(z) round(length(z) / res[[1]][[2]], 2)))
-    res[[3]] <- as.matrix(data.frame("missing" = prop_missing, "gaps" = prop_gaps))
-    names(res)[[3]] <- "total"
+    total_taxa <- length(taxa)
 
-    # summarise data partitions
-    for (i in 1:length(x)) {
-        x[[i]] <- lapply(x[[i]], tolower)
-        missing <- lapply(x[[i]], function(z) which(z == "?" | z == "n" | z == "x"))
-        gaps <- lapply(x[[i]], function(z) which(z == "-"))
-        if (names(x)[[i]] == "dna" | names(x)[[i]] == "rna") {
-            unam_chars <- lapply(x[[i]], function(z) which(z == "a" | z == "c" | z == "g" | z == "t" | z == "u"))
-            poly <- lapply(1:length(x[[i]]), function(z) (1:length(x[[i]][[z]]))[-c(missing[[z]], gaps[[z]], unam_chars[[z]])])
-            names(poly) <- names(unam_chars)
+    total_chars <- sum(
+        vapply(
+            x,
+            function(z) length(z[[1]]),
+            numeric(1)
+        )
+    )
+
+    overall <- data.frame(
+        Ntax = total_taxa,
+        Nchar = total_chars,
+        Npart = length(x)
+    )
+
+    # ------------------------------------------------------------
+    # partition summary
+    # ------------------------------------------------------------
+
+    partition_summary <- data.frame(
+        partition = character(),
+        type = character(),
+        Ntax = integer(),
+        Nchar = integer(),
+        missing = numeric(),
+        gaps = numeric(),
+        stringsAsFactors = FALSE
+    )
+
+    # ------------------------------------------------------------
+    # taxon x partition missingness matrix
+    # ------------------------------------------------------------
+
+    taxon_missing <- data.frame(
+        taxon = taxa,
+        stringsAsFactors = FALSE
+    )
+
+    rownames(taxon_missing) <- taxa
+
+    # ------------------------------------------------------------
+    # summarise each partition
+    # ------------------------------------------------------------
+
+    for (i in seq_along(x)) {
+
+        part <- lapply(x[[i]], tolower)
+
+        vec <- unlist(part)
+
+        ntax <- length(part)
+        nchar <- length(part[[1]])
+
+        total_cells <- length(vec)
+
+        missing_prop <- round(
+            sum(vec %in% c("?", "n", "x")) / total_cells,
+            4
+        )
+
+        gap_prop <- round(
+            sum(vec == "-") / total_cells,
+            4
+        )
+
+        datatype <- part_info$type[
+            match(part_names[i], part_info$partition)
+        ]
+
+        partition_summary <- rbind(
+            partition_summary,
+            data.frame(
+                partition = part_names[i],
+                type = datatype,
+                Ntax = ntax,
+                Nchar = nchar,
+                missing = missing_prop,
+                gaps = gap_prop,
+                stringsAsFactors = FALSE
+            )
+        )
+
+        # --------------------------------------------------------
+        # per-taxon missing data
+        # --------------------------------------------------------
+
+        missing_vec <- numeric(length(taxa))
+
+        for (j in seq_along(taxa)) {
+
+            tx <- taxa[j]
+
+            if (is.null(part[[tx]])) {
+
+                # completely missing taxon
+                missing_vec[j] <- 1
+
+            } else {
+
+                seqx <- part[[tx]]
+
+                missing_vec[j] <- round(
+                    sum(seqx %in% c("?", "n", "x")) /
+                    length(seqx),
+                    4
+                )
+            }
         }
-        if (names(x)[[i]] == "standard") {
-            unam_chars <- lapply(x[[i]], function(z) which(is.na(suppressWarnings(as.numeric(z))) == F))
-            poly <- lapply(1:length(x[[i]]), function(z) (1:length(x[[i]][[z]]))[-c(missing[[z]], gaps[[z]], unam_chars[[z]])])
-            names(poly) <- names(unam_chars)
-        }
-        if (names(x)[[i]] == "protein") {
-            poly <- lapply(1:length(x[[i]]), function(z) which(z == "b" | z == "z" | z == "j" | z == "u"))
-            unam_chars <- lapply(1:length(x[[i]]), function(z) (1:length(x[[i]][[z]]))[-c(missing[[z]], gaps[[z]], poly[[z]])])
-        }
-        part_Nchar <- length(x[[i]][[1]])
-        prop_missing <- unlist(lapply(missing, function(z) round(length(z) / part_Nchar, 2)))
-        prop_gaps <- unlist(lapply(gaps, function(z) round(length(z) / part_Nchar, 2)))
-        prop_poly <- unlist(lapply(poly, function(z) round(length(z) / part_Nchar, 2)))
-        prop_unam <- unlist(lapply(unam_chars, function(z) round(length(z) / part_Nchar, 2)))
 
-        res[[i + 3]] <- as.matrix(data.frame(missing = prop_missing, gaps = prop_gaps, ambiguous = prop_poly, unambiguous = prop_unam))
-        names(res)[[i + 3]] <- names(x)[[i]]
+        taxon_missing[[part_names[i]]] <- missing_vec
     }
+
+    rownames(partition_summary) <- NULL
+
+    # remove redundant taxon column
+    taxon_missing$taxon <- NULL
+
+    # ------------------------------------------------------------
+    # output
+    # ------------------------------------------------------------
+
+    res <- list(
+        data = overall,
+        partitions = partition_summary,
+        taxon_missing = taxon_missing
+    )
+
     class(res) <- "summary_nexdat"
+
     return(res)
 }
 

@@ -2,24 +2,39 @@
 % Please edit documentation in R/treesurgeon.r
 \name{summary.nexdat}
 \alias{summary.nexdat}
-\title{summary.nexdat}
+\title{Summarise a nexdat object}
 \usage{
-\method{summary}{nexdat}(x)
+\method{summary}{nexdat}(x, ...)
 }
 \arguments{
-\item{x}{an object of class 'nexdat'.}
+\item{x}{An object of class \code{"nexdat"}.}
 }
 \value{
-An object of class 'summary.nexdat'.
+An object of class \code{"summary_nexdat"} containing summary
+statistics for the dataset and per-taxon missing data information.
 }
 \description{
-Function to sumarise an object of class 'nexdat'.
+Summarise taxon occupancy, missing data and gap proportions for a
+phylogenetic character matrix.
 }
 \details{
-This function returns the proportion of missing characters and proportion of gaps per taxon.
+This function calculates:
+\itemize{
+  \item the number of taxa
+  \item the number of characters
+  \item the proportion of missing characters per taxon
+  \item the proportion of gaps per taxon
+}
+
+Missing characters are defined as:
+\code{"?"}, \code{"n"} and \code{"x"}.
+
+Gap characters are defined as:
+\code{"-"}.
 }
 \examples{
 data(Lavoue2016)
+
 summary(Lavoue2016$dna)
 
 }

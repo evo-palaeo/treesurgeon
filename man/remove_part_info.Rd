@@ -2,25 +2,43 @@
 % Please edit documentation in R/treesurgeon.r
 \name{remove_part_info}
 \alias{remove_part_info}
-\title{remove partition information}
+\title{Remove partition information}
 \usage{
 remove_part_info(x)
 }
 \arguments{
-\item{x}{an object of class 'multi_nexdat'.}
+\item{x}{An object of class \code{"multi_nexdat"}.}
 }
 \value{
-an object of class 'nexdat'.
+An object of class \code{"nexdat"} in which all partitions have
+been concatenated into a single character matrix.
 }
 \description{
-Function to remove partition information from a 'multi_nexdat' object.
+Concatenate all partitions in a \code{"multi_nexdat"} object into a
+single unpartitioned \code{"nexdat"} object.
 }
 \details{
-This function removes partition information from a 'multi_nexdat' object, thereby converting it into a 'nexdat' object. Sequences from seperate partitions are conctenated.
+This function removes partition structure from a
+\code{"multi_nexdat"} object by concatenating sequences across all
+partitions for each taxon.
+
+Taxa absent from a partition are automatically padded with missing
+data characters (\code{"?"}) to preserve alignment length.
+
+Partition metadata stored in the \code{"part.info"} attribute are
+discarded.
 }
 \examples{
 data(Lavoue2016)
-partitioned_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = T)
-concatenated_data <- remove_part_info(partitioned_data)
+
+x <- cat_data(
+    Lavoue2016$standard,
+    Lavoue2016$dna,
+    use.part.info = TRUE
+)
+
+y <- remove_part_info(x)
+
+class(y)
 
 }

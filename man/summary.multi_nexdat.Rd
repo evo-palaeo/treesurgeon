@@ -2,24 +2,78 @@
 % Please edit documentation in R/treesurgeon.r
 \name{summary.multi_nexdat}
 \alias{summary.multi_nexdat}
-\title{summary.multi_nexdat}
+\title{Summarise a multi-partition phylogenetic dataset}
 \usage{
-\method{summary}{multi_nexdat}(x)
+\method{summary}{multi_nexdat}(object, ...)
 }
 \arguments{
-\item{x}{an object of class 'multi_nexdat'.}
+\item{object}{An object of class \code{"multi_nexdat"}.}
+
+\item{...}{Additional arguments (currently unused).}
 }
 \value{
-An object of class 'summary.nexdat'.
+An object of class \code{"summary_nexdat"} containing:
+\itemize{
+  \item \code{data}: overall dataset statistics
+  \item \code{partitions}: per-partition summary statistics
+  \item \code{taxon_missing}: a taxon-by-partition matrix of
+  missing data proportions
+}
 }
 \description{
-Function to sumarise an object of class 'multi_nexdat'.
+Summarise taxon occupancy, missing data and partition statistics for a
+\code{"multi_nexdat"} object.
 }
 \details{
-This function returns the proportion of missing characters and proportion of gaps per taxon. If partitions are specidied, the function also returns the proportion of missing data, gaps, ambiguous codings (e.g. polymorphic characters, characters that are coded as uncertain between two or more states) and unamibiguous characters per taxon per partition.
+This function summarises partitioned phylogenetic datasets and
+calculates:
+\itemize{
+  \item the total number of taxa
+  \item the total number of characters
+  \item the number of partitions
+  \item partition-specific character counts
+  \item partition-specific missing data proportions
+  \item partition-specific gap proportions
+  \item taxon occupancy across partitions
+}
+
+Missing characters are defined as:
+\code{"?"}, \code{"n"} and \code{"x"}.
+
+Gap characters are defined as:
+\code{"-"}.
+
+Taxa absent from a partition are treated as completely missing for
+that partition.
+
+Partition metadata are recovered from the
+\code{"part.info"} attribute where available.
+
+The \code{taxon_missing} component contains the proportion of missing
+characters for each taxon in each partition and can be used for
+occupancy filtering, quality control and visualisation of phylogenomic
+completeness.
 }
 \examples{
 data(Lavoue2016)
-summary(Lavoue2016)
+
+## Create partitioned dataset
+x <- cat_data(
+    Lavoue2016$standard,
+    Lavoue2016$dna,
+    use.part.info = TRUE
+)
+
+## Summarise dataset
+s <- summary(x)
+
+## Overall statistics
+s$data
+
+## Partition statistics
+s$partitions
+
+## Taxon occupancy matrix
+s$taxon_missing
 
 }
