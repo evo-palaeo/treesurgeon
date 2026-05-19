@@ -1862,8 +1862,7 @@ write_nexdat <- function(x,
 #'
 #' @details
 #' This function is designed for combining phylogenetic datasets with partially
-#' overlapping taxon sampling, such as molecular, morphological and genomic
-#' partitions. Taxa absent from a partition are automatically coded as missing.
+#' overlapping taxon sampling, such as AA, DNA and morphological partitions. Taxa absent from a partition are automatically coded as missing.
 #'
 #' Partition datatypes are automatically inferred where possible and currently
 #' include:
