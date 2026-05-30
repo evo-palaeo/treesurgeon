@@ -1,4 +1,4 @@
-<img width="369" height="427" alt="image" src="https://github.com/user-attachments/assets/2265182b-cb01-4d95-bb6d-b57ebf92a155" />
+<img width="369" height="427" alt="image" src="https://github.com/user-attachments/assets/78651ad9-528f-47f3-81f9-9c9954e4aded" />
 
 # treesurgeon v 0.4
 Tools and timesavers for tinkering with phylogenetic trees and data in R. 
