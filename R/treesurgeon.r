@@ -162,25 +162,53 @@ read_nexdat <- function(file, use.part.info = F) {
         nchar
     }
     "find.matrix.line" <- function(x) {
-        for (i in 1:NROW(x)) {
-            if (any(f <- grep("\\bmatrix\\b", x[i], ignore.case = TRUE))) {
-                matrix.line <- as.numeric(i)
-                break
+
+        begin.characters <- grep(
+            "^\\s*begin\\s+characters",
+            x,
+            ignore.case = TRUE
+        )
+
+        if (length(begin.characters) > 0) {
+
+            for (i in begin.characters[1]:length(x)) {
+
+                if (grepl(
+                    "^\\s*matrix\\s*$",
+                    x[i],
+                    ignore.case = TRUE
+                )) {
+
+                    return(i)
+                }
             }
         }
-        matrix.line
+
+        # fallback for standard DATA block
+        for (i in seq_along(x)) {
+
+            if (grepl(
+                "^\\s*matrix\\s*$",
+                x[i],
+                ignore.case = TRUE
+            )) {
+
+                return(i)
+            }
+        }
+
+        stop("Could not locate MATRIX block")
     }
 
     "find.datatype.line" <- function(x) {
         for (i in 1:NROW(x)) {
-            if (any(f <- grep("format datatype", x[i], ignore.case = TRUE))) {
+            if (any(f <- grep("datatype", x[i], ignore.case = TRUE))) {
                 matrix.line <- as.numeric(i)
                 break
             }
         }
         matrix.line
     }
-
 
     "get.partition.info" <- function(x) {
         part.info <- data.frame()
@@ -206,28 +234,92 @@ read_nexdat <- function(file, use.part.info = F) {
         return(")" == x || "}" == x)
     }
     "get.polymorphism" <- function(x) {
+
         position <- 1
+
         while (position <= length(x)) {
-            if (is.poly.start(x[position])) {
+
+            if (x[position] %in% c("(", "{")) {
+
+                open_bracket <- x[position]
+
+                close_bracket <- ifelse(
+                    open_bracket == "(",
+                    ")",
+                    "}"
+                )
+
                 poly_end <- position + 1
-                while (!is.poly.end(x[poly_end])) {
+
+                while (x[poly_end] != close_bracket) {
+
                     poly_end <- poly_end + 1
-                    if (is.poly.start(x[poly_end]) || poly_end >
-                        length(x)) {
+
+                    if (poly_end > length(x)) {
+
                         stop(
-                            "missing closing bracket for a polymorphism at position ",
+                            "missing closing bracket for character at position ",
                             position
                         )
                     }
                 }
-                x[position] <- paste0(x[(position + 1):(poly_end -
-                    1)], collapse = "/")
+
+                state <- paste(
+                    x[(position + 1):(poly_end - 1)],
+                    collapse = " "
+                )
+
+                x[position] <- paste0(
+                    open_bracket,
+                    state,
+                    close_bracket
+                )
+
                 x <- x[-c((position + 1):poly_end)]
             }
+
             position <- position + 1
         }
-        return(x)
+
+        x
     }
+
+    "convert.slash.uncertainty" <- function(x) {
+
+        m <- gregexpr(
+            "[A-Za-z0-9]+(?:/[A-Za-z0-9]+)+",
+            x,
+            perl = TRUE
+        )[[1]]
+
+        if (m[[1]] == -1) {
+            return(x)
+        }
+
+        matches <- regmatches(x, list(m))[[1]]
+
+        replacements <- vapply(
+            matches,
+            function(z) {
+
+                paste0(
+                    "{",
+                    paste(
+                        strsplit(z, "/", fixed = TRUE)[[1]],
+                        collapse = " "
+                    ),
+                    "}"
+                )
+
+            },
+            character(1)
+        )
+
+        regmatches(x, list(m)) <- list(replacements)
+
+        x
+    }
+
     X <- scan(
         file = file, what = character(), sep = "\n", quiet = TRUE,
         comment.char = "[", strip.white = TRUE
@@ -273,10 +365,15 @@ read_nexdat <- function(file, use.part.info = F) {
         Name <- trim.whitespace(ts[1])
         nAME <- paste(c("\\b", Name, "\\b"), collapse = "")
         if (any(l <- grep(nAME, names(Obj)))) {
+
+            Seq <- convert.slash.uncertainty(Seq)
+
             tsp <- strsplit(Seq, NULL)[[1]]
-            if (any("(" %in% tsp || "{" %in% tsp)) {
+
+            if (any(tsp %in% c("(", "{"))) {
                 tsp <- get.polymorphism(tsp)
             }
+
             for (k in 1:length(tsp)) {
                 p <- k + pos
                 Obj[[l]][p] <- tsp[k]
@@ -284,10 +381,15 @@ read_nexdat <- function(file, use.part.info = F) {
             }
         } else {
             names(Obj)[i] <- Name
+           
+            Seq <- convert.slash.uncertainty(Seq)
+
             tsp <- strsplit(Seq, NULL)[[1]]
-            if (any("(" %in% tsp || "{" %in% tsp)) {
+
+            if (any(tsp %in% c("(", "{"))) {
                 tsp <- get.polymorphism(tsp)
             }
+
             for (k in 1:length(tsp)) {
                 p <- k + pos
                 Obj[[i]][p] <- tsp[k]
@@ -1879,7 +1981,9 @@ write_nexdat <- function(x,
 #' Taxon names must match exactly across input datasets for sequences to be
 #' combined correctly.
 #'
-#' @examples #' data(Lavoue2016) 
+#' @examples 
+#' 
+#' data(Lavoue2016) 
 #' combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F) 
 #' ## Visualise 
 #' if (!require("BiocManager", quietly = TRUE)) { 

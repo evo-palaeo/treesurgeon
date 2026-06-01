@@ -52,7 +52,8 @@ Taxon names must match exactly across input datasets for sequences to be
 combined correctly.
 }
 \examples{
-#' data(Lavoue2016) 
+
+data(Lavoue2016) 
 combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F) 
 ## Visualise 
 if (!require("BiocManager", quietly = TRUE)) { 
