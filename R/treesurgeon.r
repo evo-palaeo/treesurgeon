@@ -704,15 +704,36 @@ get_index_matrix <- function(model = c("ER", "SYM", "ASYM", "ARD"),
 #' @export
 
 root_multi <- function(trees, node) {
-    trees <- .compressTipLabel(trees)
+
+    ref <- trees[[1]]$tip.label
+
+    same_order <- all(vapply(
+        trees[-1],
+        function(tr) identical(tr$tip.label, ref),
+        logical(1)
+    ))
+
+    if (!same_order) {
+        warning(
+            "Trees have different tip-label orders. You may be rooting trees inconsistently. Consider using ape:::.compressTipLabel() before proceeding."
+        )
+    }
+
     if (length(node) > 1) {
-        if (any(is.rooted(trees) == F)) {
+        if (any(!is.rooted(trees))) {
             stop("some trees are unrooted!")
         }
     }
-    trees <- lapply(trees, FUN = root_node, node = 1)
+
+    trees <- lapply(
+        trees,
+        FUN = root_node,
+        node = node
+    )
+
     class(trees) <- "multiPhylo"
-    return(trees)
+
+    trees
 }
 
 
