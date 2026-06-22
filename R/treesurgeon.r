@@ -1586,6 +1586,8 @@ keep_otus <- function(x, taxa) {
 #' @param append.partition.labels Logical. If \code{TRUE}, partition
 #' names are written as Nexus comments before each partition block in
 #' interleaved output.
+#' 
+#' @param format Character string specifying the Nexus format. Either "simple" (default) or "mesquite".
 #'
 #' @return Invisibly returns the output file path(s).
 #'
@@ -1640,7 +1642,13 @@ keep_otus <- function(x, taxa) {
 write_nexdat <- function(x,
                          file = "output.nex",
                          separate.files = FALSE,
-                         append.partition.labels = TRUE) {
+                         append.partition.labels = TRUE,
+                         format = c("simple", "mesquite")) {
+
+    output.format <- match.arg(
+        tolower(format),
+        choices = c("simple", "mesquite")
+    )
 
     if (!inherits(x, c("nexdat", "multi_nexdat"))) {
         stop("Object must be class 'nexdat' or 'multi_nexdat'")
@@ -1727,16 +1735,168 @@ write_nexdat <- function(x,
     }
 
     # ------------------------------------------------------------
+    # Helper function for writing a MESQUITE nexus file
+    # ------------------------------------------------------------
+
+    write_mesquite_partition <- function(con,
+                                        dat,
+                                        all_taxa,
+                                        partition_name,
+                                        datatype) {
+
+        nchar <- length(dat[[1]])
+
+        cat("BEGIN CHARACTERS;\n", file = con)
+
+        cat(
+            paste0(
+                "\tTITLE '",
+                partition_name,
+                "';\n"
+            ),
+            file = con
+        )
+
+        cat(
+            paste0(
+                "\tDIMENSIONS NCHAR=",
+                nchar,
+                ";\n"
+            ),
+            file = con
+        )
+
+        datatype <- tolower(datatype)
+
+        if (datatype %in% c("morph", "standard")) {
+
+            cat(
+                "\tFORMAT DATATYPE=STANDARD RESPECTCASE GAP=- MISSING=?;\n",
+                file = con
+            )
+
+        } else {
+
+            cat(
+                paste0(
+                    "\tFORMAT DATATYPE=",
+                    toupper(datatype),
+                    " GAP=- MISSING=?;\n"
+                ),
+                file = con
+            )
+        }
+
+        cat("\tMATRIX\n", file = con)
+
+        for (tx in all_taxa) {
+
+            if (is.null(dat[[tx]])) {
+
+                seqx <- paste0(
+                    rep("?", nchar),
+                    collapse = ""
+                )
+
+            } else {
+
+                seqx <- paste0(
+                    dat[[tx]],
+                    collapse = ""
+                )
+            }
+
+            cat(
+                sprintf(
+                    "\t%-30s %s\n",
+                    tx,
+                    seqx
+                ),
+                file = con
+            )
+        }
+
+        cat("\n;\n\nEND;\n\n", file = con)
+    }
+
+    # ------------------------------------------------------------
+    # Helper function for writing a MESQUITE taxa
+    # ------------------------------------------------------------
+
+    write_mesquite_taxa <- function(con, taxa) {
+
+        cat("BEGIN TAXA;\n", file = con)
+
+        cat("\tTITLE Taxa;\n", file = con)
+
+        cat(
+            paste0(
+                "\tDIMENSIONS NTAX=",
+                length(taxa),
+                ";\n"
+            ),
+            file = con
+        )
+
+        cat("\tTAXLABELS\n", file = con)
+
+        cat(
+            paste0(
+                "\t\t",
+                paste(taxa, collapse = " "),
+                "\n"
+            ),
+            file = con
+        )
+
+        cat("\t;\n\nEND;\n\n", file = con)
+    }
+
+    # ------------------------------------------------------------
     # SINGLE nexdat OBJECT
     # ------------------------------------------------------------
 
     if (inherits(x, "nexdat")) {
 
-        write_single_nexus(
-            dat = x,
-            outfile = file,
-            datatype = "dna"
-        )
+        if (output.format == "simple") {
+
+            write_single_nexus(
+                dat = x,
+                outfile = file,
+                datatype = "dna"
+            )
+
+        } else {
+
+            con <- file(file, open = "w")
+            on.exit(close(con))
+
+            taxa <- names(x)
+
+            cat("#NEXUS\n", file = con)
+
+            cat(
+                paste0(
+                    "[written ",
+                    base::format(
+                        Sys.time(),
+                        "%a %b %d %H:%M:%S %Z %Y"
+                    ),
+                    " by write_nexdat]\n\n"
+                ),
+                file = con
+            )
+
+            write_mesquite_taxa(con, taxa)
+
+            write_mesquite_partition(
+                con = con,
+                dat = x,
+                all_taxa = taxa,
+                partition_name = deparse(substitute(x)),
+                datatype = "dna"
+            )
+        }
 
         return(invisible(file))
     }
@@ -1847,6 +2007,57 @@ write_nexdat <- function(x,
 
     ntax <- length(taxa)
     nchar <- sum(part_lengths)
+
+    # ----------------------------------------------------
+    # Check if MESQUITE
+    # ----------------------------------------------------  
+
+    if (output.format == "mesquite") {
+
+        taxa <- sort(unique(unlist(lapply(x, names))))
+
+        con <- file(file, open = "w")
+
+        on.exit(close(con))
+
+        cat("#NEXUS\n", file = con)
+
+        cat(
+            paste0(
+                "[written ",
+                format(Sys.time(),
+                   "%a %b %d %H:%M:%S %Z %Y"),
+                    " by write_nexdat]\n\n"
+            ),
+            file = con
+        )
+
+        # TAXA block
+
+        write_mesquite_taxa(con, taxa)
+
+        # CHARACTER blocks
+
+        for (i in seq_along(x)) {
+
+            part_name <- names(x)[i]
+
+            datatype <- part_info$type[
+                match(part_name,
+                    part_info$partition)
+            ]
+
+            write_mesquite_partition(
+                con = con,
+                dat = x[[i]],
+                all_taxa = taxa,
+                partition_name = part_name,
+                datatype = datatype
+            )
+        }
+
+        return(invisible(file))
+    }
 
     # ------------------------------------------------------------
     # Open file connection

@@ -8,7 +8,8 @@ write_nexdat(
   x,
   file = "output.nex",
   separate.files = FALSE,
-  append.partition.labels = TRUE
+  append.partition.labels = TRUE,
+  format = c("simple", "mesquite")
 )
 }
 \arguments{
@@ -24,6 +25,8 @@ written to a single combined Nexus file using mixed datatype format.}
 \item{append.partition.labels}{Logical. If \code{TRUE}, partition
 names are written as Nexus comments before each partition block in
 interleaved output.}
+
+\item{format}{Character string specifying the Nexus format. Either "simple" (default) or "mesquite".}
 }
 \value{
 Invisibly returns the output file path(s).
