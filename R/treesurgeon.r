@@ -1676,12 +1676,55 @@ write_nexdat <- function(x,
     }
 
     # ------------------------------------------------------------
+    # Helper function to guess datatype.
+    # ------------------------------------------------------------
+
+    guess_datatype <- function(dat) {
+
+        chars <- tolower(unlist(dat))
+
+        chars <- chars[
+            !(chars %in% c("?", "-", "n", "x"))
+        ]
+
+        if (length(chars) == 0) {
+            return("standard")
+        }
+
+        # remove polymorphism notation
+        chars <- gsub("[(){} ]", "", chars)
+
+        # morphology
+        if (all(grepl("^[0-9]+$", chars))) {
+            return("standard")
+        }
+
+        # DNA/RNA
+        dna_chars <- c(
+            "a","c","g","t","u",
+            "r","y","m","k","s","w",
+            "b","d","h","v"
+        )
+
+        if (all(chars %in% dna_chars)) {
+
+            if ("u" %in% chars) {
+                return("rna")
+            }
+
+            return("dna")
+        }
+
+        return("protein")
+    }
+
+    # ------------------------------------------------------------
     # Helper function for writing a single nexus file
     # ------------------------------------------------------------
 
     write_single_nexus <- function(dat,
                                    outfile,
-                                   datatype = "dna",
+                                   datatype = guess_datatype(x),
                                    partition_name = NULL) {
 
         taxa <- names(dat)
@@ -1884,7 +1927,7 @@ write_nexdat <- function(x,
             write_single_nexus(
                 dat = x,
                 outfile = file,
-                datatype = "dna"
+                datatype =  guess_datatype(x)
             )
 
         } else {
@@ -1915,7 +1958,7 @@ write_nexdat <- function(x,
                 dat = x,
                 all_taxa = taxa,
                 partition_name = deparse(substitute(x)),
-                datatype = "dna"
+                datatype =  guess_datatype(x)
             )
         }
 
