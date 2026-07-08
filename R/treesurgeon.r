@@ -3148,21 +3148,30 @@ Brier <- function(prediction, truth) {
 #'
 #' @export
 multBrier <- function(prediction, truth) {
+    if (!is.matrix(prediction)) {
+        stop("prediction must be a matrix of class probabilities!")
+    }
+
     if (is.matrix(truth)) {
         one_hot <- truth
-    }
-    if (is.atomic(truth)) {
-        one_hot <- matrix(0, nrow = length(truth), ncol = ncol(prediction))
+    } else if (is.atomic(truth)) {
+        one_hot <- matrix(
+            0,
+            nrow = length(truth),
+            ncol = ncol(prediction)
+        )
+
         one_hot[cbind(seq_along(truth), truth)] <- 1
+    } else {
+        stop("truth must be either a vector or a matrix!")
     }
-    if (any(dim(one_hot) == dim(prediction)) == F) {
-        stop("truth and prediction are of different dimensions!")
-    }
-    mb_score <- mean(rowSums((prediction - one_hot)^2))
 
-    return(mb_score)
+    if (!identical(dim(prediction), dim(one_hot))) {
+        stop("prediction and truth have different dimensions!")
+    }
+
+    mean(rowSums((prediction - one_hot)^2))
 }
-
 
 #' Raw error
 #'
