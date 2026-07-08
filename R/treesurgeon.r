@@ -162,7 +162,6 @@ read_nexdat <- function(file, use.part.info = F) {
         nchar
     }
     "find.matrix.line" <- function(x) {
-
         begin.characters <- grep(
             "^\\s*begin\\s+characters",
             x,
@@ -170,15 +169,12 @@ read_nexdat <- function(file, use.part.info = F) {
         )
 
         if (length(begin.characters) > 0) {
-
             for (i in begin.characters[1]:length(x)) {
-
                 if (grepl(
                     "^\\s*matrix\\s*$",
                     x[i],
                     ignore.case = TRUE
                 )) {
-
                     return(i)
                 }
             }
@@ -186,13 +182,11 @@ read_nexdat <- function(file, use.part.info = F) {
 
         # fallback for standard DATA block
         for (i in seq_along(x)) {
-
             if (grepl(
                 "^\\s*matrix\\s*$",
                 x[i],
                 ignore.case = TRUE
             )) {
-
                 return(i)
             }
         }
@@ -234,13 +228,10 @@ read_nexdat <- function(file, use.part.info = F) {
         return(")" == x || "}" == x)
     }
     "get.polymorphism" <- function(x) {
-
         position <- 1
 
         while (position <= length(x)) {
-
             if (x[position] %in% c("(", "{")) {
-
                 open_bracket <- x[position]
 
                 close_bracket <- ifelse(
@@ -252,11 +243,9 @@ read_nexdat <- function(file, use.part.info = F) {
                 poly_end <- position + 1
 
                 while (x[poly_end] != close_bracket) {
-
                     poly_end <- poly_end + 1
 
                     if (poly_end > length(x)) {
-
                         stop(
                             "missing closing bracket for character at position ",
                             position
@@ -285,7 +274,6 @@ read_nexdat <- function(file, use.part.info = F) {
     }
 
     "convert.slash.uncertainty" <- function(x) {
-
         m <- gregexpr(
             "[A-Za-z0-9]+(?:/[A-Za-z0-9]+)+",
             x,
@@ -301,7 +289,6 @@ read_nexdat <- function(file, use.part.info = F) {
         replacements <- vapply(
             matches,
             function(z) {
-
                 paste0(
                     "{",
                     paste(
@@ -310,7 +297,6 @@ read_nexdat <- function(file, use.part.info = F) {
                     ),
                     "}"
                 )
-
             },
             character(1)
         )
@@ -365,7 +351,6 @@ read_nexdat <- function(file, use.part.info = F) {
         Name <- trim.whitespace(ts[1])
         nAME <- paste(c("\\b", Name, "\\b"), collapse = "")
         if (any(l <- grep(nAME, names(Obj)))) {
-
             Seq <- convert.slash.uncertainty(Seq)
 
             tsp <- strsplit(Seq, NULL)[[1]]
@@ -381,7 +366,7 @@ read_nexdat <- function(file, use.part.info = F) {
             }
         } else {
             names(Obj)[i] <- Name
-           
+
             Seq <- convert.slash.uncertainty(Seq)
 
             tsp <- strsplit(Seq, NULL)[[1]]
@@ -619,74 +604,70 @@ root_node <- function(tree, node) {
 get_index_matrix <- function(model = c("ER", "SYM", "ASYM", "ARD"),
                              ordered = FALSE,
                              states = NULL) {
-  
-  model <- match.arg(model)
-  
-  if (is.null(states)) {
-    stop("Please provide 'states' (either number of states or state labels).")
-  }
-  
-  if (length(states) == 1 && is.numeric(states)) {
-    n <- states
-    state_labels <- as.character(seq_len(n))
-  } else {
-    state_labels <- as.character(states)
-    n <- length(states)
-  }
-  
-  Q <- matrix(0, n, n)
-  rownames(Q) <- colnames(Q) <- state_labels
-  
-  rate_id <- 1
-  
-  if (model == "ER") {
-    for (i in 1:n) {
-      for (j in 1:n) {
-        if (i != j && (!ordered || abs(i - j) == 1)) {
-          Q[i, j] <- 1
-        }
-      }
+    model <- match.arg(model)
+
+    if (is.null(states)) {
+        stop("Please provide 'states' (either number of states or state labels).")
     }
-    
-  } else if (model == "SYM") {
-    for (i in 1:(n-1)) {
-      for (j in (i+1):n) {
-        if (!ordered || abs(i - j) == 1) {
-          Q[i, j] <- rate_id
-          Q[j, i] <- rate_id
-          rate_id <- rate_id + 1
-        }
-      }
+
+    if (length(states) == 1 && is.numeric(states)) {
+        n <- states
+        state_labels <- as.character(seq_len(n))
+    } else {
+        state_labels <- as.character(states)
+        n <- length(states)
     }
-    
-  } else if (model == "ASYM") {
-    forward_id <- 1
-    backward_id <- 2
-    
-    for (i in 1:n) {
-      for (j in 1:n) {
-        if (i != j && (!ordered || abs(i - j) == 1)) {
-          if (i < j) {
-            Q[i, j] <- forward_id
-          } else {
-            Q[i, j] <- backward_id
-          }
+
+    Q <- matrix(0, n, n)
+    rownames(Q) <- colnames(Q) <- state_labels
+
+    rate_id <- 1
+
+    if (model == "ER") {
+        for (i in 1:n) {
+            for (j in 1:n) {
+                if (i != j && (!ordered || abs(i - j) == 1)) {
+                    Q[i, j] <- 1
+                }
+            }
         }
-      }
-    }
-    
-  } else if (model == "ARD") {
-    for (i in 1:n) {
-      for (j in 1:n) {
-        if (i != j && (!ordered || abs(i - j) == 1)) {
-          Q[i, j] <- rate_id
-          rate_id <- rate_id + 1
+    } else if (model == "SYM") {
+        for (i in 1:(n - 1)) {
+            for (j in (i + 1):n) {
+                if (!ordered || abs(i - j) == 1) {
+                    Q[i, j] <- rate_id
+                    Q[j, i] <- rate_id
+                    rate_id <- rate_id + 1
+                }
+            }
         }
-      }
+    } else if (model == "ASYM") {
+        forward_id <- 1
+        backward_id <- 2
+
+        for (i in 1:n) {
+            for (j in 1:n) {
+                if (i != j && (!ordered || abs(i - j) == 1)) {
+                    if (i < j) {
+                        Q[i, j] <- forward_id
+                    } else {
+                        Q[i, j] <- backward_id
+                    }
+                }
+            }
+        }
+    } else if (model == "ARD") {
+        for (i in 1:n) {
+            for (j in 1:n) {
+                if (i != j && (!ordered || abs(i - j) == 1)) {
+                    Q[i, j] <- rate_id
+                    rate_id <- rate_id + 1
+                }
+            }
+        }
     }
-  }
-  
-  return(Q)
+
+    return(Q)
 }
 
 
@@ -704,7 +685,6 @@ get_index_matrix <- function(model = c("ER", "SYM", "ASYM", "ARD"),
 #' @export
 
 root_multi <- function(trees, node) {
-
     ref <- trees[[1]]$tip.label
 
     same_order <- all(vapply(
@@ -881,74 +861,70 @@ make_asym_tree <- function(n = 32) {
 get_index_matrix <- function(model = c("ER", "SYM", "ASYM", "ARD"),
                              ordered = FALSE,
                              states = NULL) {
-  
-  model <- match.arg(model)
-  
-  if (is.null(states)) {
-    stop("Please provide 'states' (either number of states or state labels).")
-  }
-  
-  if (length(states) == 1 && is.numeric(states)) {
-    n <- states
-    state_labels <- as.character(seq_len(n))
-  } else {
-    state_labels <- as.character(states)
-    n <- length(states)
-  }
-  
-  Q <- matrix(0, n, n)
-  rownames(Q) <- colnames(Q) <- state_labels
-  
-  rate_id <- 1
-  
-  if (model == "ER") {
-    for (i in 1:n) {
-      for (j in 1:n) {
-        if (i != j && (!ordered || abs(i - j) == 1)) {
-          Q[i, j] <- 1
-        }
-      }
+    model <- match.arg(model)
+
+    if (is.null(states)) {
+        stop("Please provide 'states' (either number of states or state labels).")
     }
-    
-  } else if (model == "SYM") {
-    for (i in 1:(n-1)) {
-      for (j in (i+1):n) {
-        if (!ordered || abs(i - j) == 1) {
-          Q[i, j] <- rate_id
-          Q[j, i] <- rate_id
-          rate_id <- rate_id + 1
-        }
-      }
+
+    if (length(states) == 1 && is.numeric(states)) {
+        n <- states
+        state_labels <- as.character(seq_len(n))
+    } else {
+        state_labels <- as.character(states)
+        n <- length(states)
     }
-    
-  } else if (model == "ASYM") {
-    forward_id <- 1
-    backward_id <- 2
-    
-    for (i in 1:n) {
-      for (j in 1:n) {
-        if (i != j && (!ordered || abs(i - j) == 1)) {
-          if (i < j) {
-            Q[i, j] <- forward_id
-          } else {
-            Q[i, j] <- backward_id
-          }
+
+    Q <- matrix(0, n, n)
+    rownames(Q) <- colnames(Q) <- state_labels
+
+    rate_id <- 1
+
+    if (model == "ER") {
+        for (i in 1:n) {
+            for (j in 1:n) {
+                if (i != j && (!ordered || abs(i - j) == 1)) {
+                    Q[i, j] <- 1
+                }
+            }
         }
-      }
-    }
-    
-  } else if (model == "ARD") {
-    for (i in 1:n) {
-      for (j in 1:n) {
-        if (i != j && (!ordered || abs(i - j) == 1)) {
-          Q[i, j] <- rate_id
-          rate_id <- rate_id + 1
+    } else if (model == "SYM") {
+        for (i in 1:(n - 1)) {
+            for (j in (i + 1):n) {
+                if (!ordered || abs(i - j) == 1) {
+                    Q[i, j] <- rate_id
+                    Q[j, i] <- rate_id
+                    rate_id <- rate_id + 1
+                }
+            }
         }
-      }
+    } else if (model == "ASYM") {
+        forward_id <- 1
+        backward_id <- 2
+
+        for (i in 1:n) {
+            for (j in 1:n) {
+                if (i != j && (!ordered || abs(i - j) == 1)) {
+                    if (i < j) {
+                        Q[i, j] <- forward_id
+                    } else {
+                        Q[i, j] <- backward_id
+                    }
+                }
+            }
+        }
+    } else if (model == "ARD") {
+        for (i in 1:n) {
+            for (j in 1:n) {
+                if (i != j && (!ordered || abs(i - j) == 1)) {
+                    Q[i, j] <- rate_id
+                    rate_id <- rate_id + 1
+                }
+            }
+        }
     }
-  }
-  
-  return(Q)
+
+    return(Q)
 }
 
 
@@ -1388,7 +1364,6 @@ gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = N
 #' @export
 
 remove_part_info <- function(x) {
-
     if (!inherits(x, "multi_nexdat")) {
         stop("Object is not class 'multi_nexdat'")
     }
@@ -1400,25 +1375,20 @@ remove_part_info <- function(x) {
     names(out) <- taxa
 
     for (tx in taxa) {
-
         seqx <- character()
 
         for (i in seq_along(x)) {
-
             part <- x[[i]]
 
             # partition length
             part_length <- length(part[[1]])
 
             if (is.null(part[[tx]])) {
-
                 seqx <- c(
                     seqx,
                     rep("?", part_length)
                 )
-
             } else {
-
                 seqx <- c(
                     seqx,
                     part[[tx]]
@@ -1478,9 +1448,8 @@ remove_part_info <- function(x) {
 #' summary(y)
 #'
 #' @export
-#' 
+#'
 drop_otus <- function(x, taxa) {
-
     if (!inherits(x, c("nexdat", "multi_nexdat"))) {
         stop("Object must be class 'nexdat' or 'multi_nexdat'")
     }
@@ -1492,7 +1461,6 @@ drop_otus <- function(x, taxa) {
     # ------------------------------------------------------------
 
     if (inherits(x, "nexdat")) {
-
         keep <- !(names(x) %in% taxa)
 
         x <- x[keep]
@@ -1505,7 +1473,6 @@ drop_otus <- function(x, taxa) {
     # ------------------------------------------------------------
 
     out <- lapply(x, function(part) {
-
         keep <- !(names(part) %in% taxa)
 
         part[keep]
@@ -1562,9 +1529,8 @@ drop_otus <- function(x, taxa) {
 #' summary(y)
 #'
 #' @export
-#' 
+#'
 keep_otus <- function(x, taxa) {
-
     if (!inherits(x, c("nexdat", "multi_nexdat"))) {
         stop("Object must be class 'nexdat' or 'multi_nexdat'")
     }
@@ -1572,12 +1538,10 @@ keep_otus <- function(x, taxa) {
     taxa <- unique(taxa)
 
     if (inherits(x, "nexdat")) {
-
         return(x[names(x) %in% taxa])
     }
 
     out <- lapply(x, function(part) {
-
         part[names(part) %in% taxa]
     })
 
@@ -1607,7 +1571,7 @@ keep_otus <- function(x, taxa) {
 #' @param append.partition.labels Logical. If \code{TRUE}, partition
 #' names are written as Nexus comments before each partition block in
 #' interleaved output.
-#' 
+#'
 #' @param format Character string specifying the Nexus format. Either "simple" (default) or "mesquite".
 #'
 #' @return Invisibly returns the output file path(s).
@@ -1658,14 +1622,13 @@ keep_otus <- function(x, taxa) {
 #' }
 #'
 #' @export
-#' 
-#' 
+#'
+#'
 write_nexdat <- function(x,
                          file = "output.nex",
                          separate.files = FALSE,
                          append.partition.labels = TRUE,
                          format = c("simple", "mesquite")) {
-
     output.format <- match.arg(
         tolower(format),
         choices = c("simple", "mesquite")
@@ -1680,7 +1643,6 @@ write_nexdat <- function(x,
     # ------------------------------------------------------------
 
     guess_datatype <- function(dat) {
-
         chars <- tolower(unlist(dat))
 
         chars <- chars[
@@ -1701,13 +1663,12 @@ write_nexdat <- function(x,
 
         # DNA/RNA
         dna_chars <- c(
-            "a","c","g","t","u",
-            "r","y","m","k","s","w",
-            "b","d","h","v"
+            "a", "c", "g", "t", "u",
+            "r", "y", "m", "k", "s", "w",
+            "b", "d", "h", "v"
         )
 
         if (all(chars %in% dna_chars)) {
-
             if ("u" %in% chars) {
                 return("rna")
             }
@@ -1726,7 +1687,6 @@ write_nexdat <- function(x,
                                    outfile,
                                    datatype = guess_datatype(x),
                                    partition_name = NULL) {
-
         taxa <- names(dat)
 
         ntax <- length(dat)
@@ -1775,7 +1735,6 @@ write_nexdat <- function(x,
 
         if (!is.null(partition_name) &&
             append.partition.labels) {
-
             cat(
                 paste0("[", partition_name, "]\n"),
                 file = con
@@ -1783,7 +1742,6 @@ write_nexdat <- function(x,
         }
 
         for (tx in taxa) {
-
             cat(
                 sprintf(
                     "    %-30s %s\n",
@@ -1803,11 +1761,10 @@ write_nexdat <- function(x,
     # ------------------------------------------------------------
 
     write_mesquite_partition <- function(con,
-                                        dat,
-                                        all_taxa,
-                                        partition_name,
-                                        datatype) {
-
+                                         dat,
+                                         all_taxa,
+                                         partition_name,
+                                         datatype) {
         nchar <- length(dat[[1]])
 
         cat("BEGIN CHARACTERS;\n", file = con)
@@ -1833,14 +1790,11 @@ write_nexdat <- function(x,
         datatype <- tolower(datatype)
 
         if (datatype %in% c("morph", "standard")) {
-
             cat(
                 "\tFORMAT DATATYPE=STANDARD RESPECTCASE GAP=- MISSING=?;\n",
                 file = con
             )
-
         } else {
-
             cat(
                 paste0(
                     "\tFORMAT DATATYPE=",
@@ -1854,16 +1808,12 @@ write_nexdat <- function(x,
         cat("\tMATRIX\n", file = con)
 
         for (tx in all_taxa) {
-
             if (is.null(dat[[tx]])) {
-
                 seqx <- paste0(
                     rep("?", nchar),
                     collapse = ""
                 )
-
             } else {
-
                 seqx <- paste0(
                     dat[[tx]],
                     collapse = ""
@@ -1888,7 +1838,6 @@ write_nexdat <- function(x,
     # ------------------------------------------------------------
 
     write_mesquite_taxa <- function(con, taxa) {
-
         cat("BEGIN TAXA;\n", file = con)
 
         cat("\tTITLE Taxa;\n", file = con)
@@ -1921,17 +1870,13 @@ write_nexdat <- function(x,
     # ------------------------------------------------------------
 
     if (inherits(x, "nexdat")) {
-
         if (output.format == "simple") {
-
             write_single_nexus(
                 dat = x,
                 outfile = file,
-                datatype =  guess_datatype(x)
+                datatype = guess_datatype(x)
             )
-
         } else {
-
             con <- file(file, open = "w")
             on.exit(close(con))
 
@@ -1958,7 +1903,7 @@ write_nexdat <- function(x,
                 dat = x,
                 all_taxa = taxa,
                 partition_name = deparse(substitute(x)),
-                datatype =  guess_datatype(x)
+                datatype = guess_datatype(x)
             )
         }
 
@@ -1972,7 +1917,6 @@ write_nexdat <- function(x,
     part_info <- attr(x, "part.info")
 
     if (is.null(part_info)) {
-
         part_info <- data.frame(
             partition = names(x),
             type = "dna",
@@ -1985,9 +1929,7 @@ write_nexdat <- function(x,
     # ------------------------------------------------------------
 
     if (separate.files) {
-
         for (i in seq_along(x)) {
-
             part_name <- names(x)[i]
 
             datatype <- part_info$type[
@@ -2022,22 +1964,17 @@ write_nexdat <- function(x,
     combined <- list()
 
     for (tx in taxa) {
-
         combined[[tx]] <- list()
 
         for (i in seq_along(x)) {
-
             part <- x[[i]]
 
             if (is.null(part[[tx]])) {
-
                 combined[[tx]][[i]] <- paste0(
                     rep("?", length(part[[1]])),
                     collapse = ""
                 )
-
             } else {
-
                 combined[[tx]][[i]] <- paste0(
                     part[[tx]],
                     collapse = ""
@@ -2074,10 +2011,9 @@ write_nexdat <- function(x,
 
     # ----------------------------------------------------
     # Check if MESQUITE
-    # ----------------------------------------------------  
+    # ----------------------------------------------------
 
     if (output.format == "mesquite") {
-
         taxa <- sort(unique(unlist(lapply(x, names))))
 
         con <- file(file, open = "w")
@@ -2089,9 +2025,11 @@ write_nexdat <- function(x,
         cat(
             paste0(
                 "[written ",
-                format(Sys.time(),
-                   "%a %b %d %H:%M:%S %Z %Y"),
-                    " by write_nexdat]\n\n"
+                format(
+                    Sys.time(),
+                    "%a %b %d %H:%M:%S %Z %Y"
+                ),
+                " by write_nexdat]\n\n"
             ),
             file = con
         )
@@ -2103,12 +2041,13 @@ write_nexdat <- function(x,
         # CHARACTER blocks
 
         for (i in seq_along(x)) {
-
             part_name <- names(x)[i]
 
             datatype <- part_info$type[
-                match(part_name,
-                    part_info$partition)
+                match(
+                    part_name,
+                    part_info$partition
+                )
             ]
 
             write_mesquite_partition(
@@ -2175,11 +2114,9 @@ write_nexdat <- function(x,
     # ------------------------------------------------------------
 
     for (i in seq_along(x)) {
-
         part_name <- names(x)[i]
 
         if (append.partition.labels) {
-
             cat(
                 paste0("[", part_name, "]\n"),
                 file = con
@@ -2187,7 +2124,6 @@ write_nexdat <- function(x,
         }
 
         for (tx in taxa) {
-
             cat(
                 sprintf(
                     "    %-30s %s\n",
@@ -2256,34 +2192,33 @@ write_nexdat <- function(x,
 #' Taxon names must match exactly across input datasets for sequences to be
 #' combined correctly.
 #'
-#' @examples 
-#' 
-#' data(Lavoue2016) 
-#' combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F) 
-#' ## Visualise 
-#' if (!require("BiocManager", quietly = TRUE)) { 
-#'  install.packages("BiocManager") 
-#' } 
-#' BiocManager::install("ComplexHeatmap") 
-#' library(ComplexHeatmap) 
-#' df <- t(as.data.frame(combined_data)) 
-#' df <- tolower(df) 
-#' df[df == "?"] <- NA 
+#' @examples
+#'
+#' data(Lavoue2016)
+#' combined_data <- cat_data(Lavoue2016$standard, Lavoue2016$dna, use.part.info = F)
+#' ## Visualise
+#' if (!require("BiocManager", quietly = TRUE)) {
+#'     install.packages("BiocManager")
+#' }
+#' BiocManager::install("ComplexHeatmap")
+#' library(ComplexHeatmap)
+#' df <- t(as.data.frame(combined_data))
+#' df <- tolower(df)
+#' df[df == "?"] <- NA
 #' df[df == "-"] <- NA
 #' df[df == "n"] <- NA #
-#' states <- as.character(na.omit(unique(as.character(df)))) 
-#' cols <- rep("x", length(states)) 
-#' names(cols) <- states 
-#' morph_states <- suppressWarnings(which(is.na(as.numeric(names(cols))) == F)) 
-#' mol_states <- which(names(cols) %in% c("a", "c", "g", "t")) 
-#' cols[morph_states] <- hcl.colors(n = length(morph_states), palette = "Hawaii") 
-#' cols[mol_states] <- hcl.colors(n = length(mol_states), palette = "zissou") 
+#' states <- as.character(na.omit(unique(as.character(df))))
+#' cols <- rep("x", length(states))
+#' names(cols) <- states
+#' morph_states <- suppressWarnings(which(is.na(as.numeric(names(cols))) == F))
+#' mol_states <- which(names(cols) %in% c("a", "c", "g", "t"))
+#' cols[morph_states] <- hcl.colors(n = length(morph_states), palette = "Hawaii")
+#' cols[mol_states] <- hcl.colors(n = length(mol_states), palette = "zissou")
 #' cols[-c(mol_states, morph_states)] <- hcl.colors(n = length(cols[-c(mol_states, morph_states)]), palette = "Cividis")
 #' Heatmap(df[, 1:1500], row_names_side = "left", col = cols, na_col = "white", name = "states")
 #' @export
 
 cat_data <- function(..., use.part.info = FALSE, part.names = NULL) {
-
     args <- list(...)
     arg_exprs <- as.list(substitute(list(...)))[-1]
     arg_names <- vapply(arg_exprs, deparse, character(1))
@@ -2299,13 +2234,11 @@ cat_data <- function(..., use.part.info = FALSE, part.names = NULL) {
     inferred_names <- character()
 
     for (i in seq_along(args)) {
-
         obj <- args[[i]]
         obj_name <- arg_names[i]
 
         # Existing multi_nexdat object
         if (inherits(obj, "multi_nexdat")) {
-
             obj_parts <- obj
 
             # preserve existing partition names
@@ -2317,9 +2250,7 @@ cat_data <- function(..., use.part.info = FALSE, part.names = NULL) {
 
             partitions <- c(partitions, obj_parts)
             inferred_names <- c(inferred_names, obj_part_names)
-
         } else {
-
             # Single partition list
             partitions <- c(partitions, list(obj))
             inferred_names <- c(inferred_names, obj_name)
@@ -2357,7 +2288,6 @@ cat_data <- function(..., use.part.info = FALSE, part.names = NULL) {
     # ------------------------------------------------------------
 
     for (i in seq_along(partitions)) {
-
         partitions[[i]] <- lapply(partitions[[i]], tolower)
 
         px <- unlist(partitions[[i]])
@@ -2367,27 +2297,20 @@ cat_data <- function(..., use.part.info = FALSE, part.names = NULL) {
 
         # determine datatype
         if (length(px) == 0) {
-
             datatype <- "unknown"
-
         } else if (
             length(suppressWarnings(na.omit(as.numeric(px)))) / length(px) > 0.9
         ) {
-
             datatype <- "standard"
-
         } else if (
             length(px[px %in% c("a", "c", "g", "t", "u")]) / length(px) > 0.9
         ) {
-
             if ("u" %in% px) {
                 datatype <- "rna"
             } else {
                 datatype <- "dna"
             }
-
         } else {
-
             datatype <- "protein"
         }
 
@@ -2400,13 +2323,9 @@ cat_data <- function(..., use.part.info = FALSE, part.names = NULL) {
         part_length <- length(partitions[[i]][[1]])
 
         for (tx in taxa) {
-
             if (is.null(partitions[[i]][[tx]])) {
-
                 new_part[[tx]] <- rep("?", part_length)
-
             } else {
-
                 new_part[[tx]] <- partitions[[i]][[tx]]
             }
         }
@@ -2423,11 +2342,8 @@ cat_data <- function(..., use.part.info = FALSE, part.names = NULL) {
     # ------------------------------------------------------------
 
     if (use.part.info) {
-
         attr(new_data, "part.info") <- part.info
-
     } else {
-
         new_data <- remove_part_info(new_data)
     }
 
@@ -2862,7 +2778,6 @@ dist_m <- function(trees, method, slices = 3, normalise = F) {
 #' @export
 
 summary.nexdat <- function(x, ...) {
-
     if (!inherits(x, "nexdat")) {
         warning("Object is not class 'nexdat'")
     }
@@ -3014,7 +2929,6 @@ summary.nexdat <- function(x, ...) {
 #' @export
 
 summary.multi_nexdat <- function(object, ...) {
-
     x <- object
 
     if (!inherits(x, "multi_nexdat")) {
@@ -3034,7 +2948,6 @@ summary.multi_nexdat <- function(object, ...) {
     part_info <- attr(x, "part.info")
 
     if (is.null(part_info)) {
-
         part_info <- data.frame(
             partition = part_names,
             type = NA_character_,
@@ -3094,7 +3007,6 @@ summary.multi_nexdat <- function(object, ...) {
     # ------------------------------------------------------------
 
     for (i in seq_along(x)) {
-
         part <- lapply(x[[i]], tolower)
 
         vec <- unlist(part)
@@ -3138,21 +3050,17 @@ summary.multi_nexdat <- function(object, ...) {
         missing_vec <- numeric(length(taxa))
 
         for (j in seq_along(taxa)) {
-
             tx <- taxa[j]
 
             if (is.null(part[[tx]])) {
-
                 # completely missing taxon
                 missing_vec[j] <- 1
-
             } else {
-
                 seqx <- part[[tx]]
 
                 missing_vec[j] <- round(
                     sum(seqx %in% c("?", "n", "x")) /
-                    length(seqx),
+                        length(seqx),
                     4
                 )
             }
@@ -3251,7 +3159,7 @@ multBrier <- function(prediction, truth) {
         stop("truth and prediction are of different dimensions!")
     }
     mb_score <- mean(rowSums((prediction - one_hot)^2))
-    
+
     return(mb_score)
 }
 
@@ -3313,18 +3221,34 @@ Raw <- function(prediction, truth) {
 #' @export
 
 multRaw <- function(prediction, truth) {
+    ## Convert truth to a one-hot matrix if necessary
     if (is.matrix(truth)) {
         one_hot <- truth
-    }
-    if (is.atomic(truth)) {
-        one_hot <- matrix(0, nrow = length(truth), ncol = ncol(prediction))
+    } else if (is.atomic(truth)) {
+        one_hot <- matrix(
+            0,
+            nrow = length(truth),
+            ncol = ncol(prediction)
+        )
+
         one_hot[cbind(seq_along(truth), truth)] <- 1
+    } else {
+        stop("truth must be either a matrix or an atomic vector!")
     }
-    if (any(dim(one_hot) == dim(prediction)) == F) {
-        stop("truth and prediction are of different dimensions!")
+
+    ## Check dimensions
+    if (!identical(dim(prediction), dim(one_hot))) {
+        stop(
+            sprintf(
+                "prediction (%d × %d) and truth (%d × %d) have different dimensions.",
+                nrow(prediction), ncol(prediction),
+                nrow(one_hot), ncol(one_hot)
+            )
+        )
     }
-    mr_score <- mean(1 - rowSums(prediction * one_hot))
-    return(mr_score)
+
+    ## Calculate the mean raw error
+    mean(1 - rowSums(prediction * one_hot))
 }
 
 #' Shannon Entropy
@@ -3399,62 +3323,67 @@ loo_cv <- function(tree, x, model = "ER", fixedQ = NULL,
                    drop.tip = TRUE,
                    parallel = TRUE,
                    ...) {
-
-  if (!type %in% c("joint", "marginal")) {
-    stop("type must be either 'joint' or 'marginal'!")
-  }
-
-  args.x <- list(...)
-
-  if (!is.matrix(x)) {
-    x <- to.matrix(x, sort(unique(x)))
-  }
-
-  x <- x[tree$tip.label, ]
-  m <- ncol(x)
-
-  `%op%` <- if (parallel) foreach::`%dopar%` else foreach::`%do%`
-
-  res <- foreach::foreach(i = tips, .combine = "cbind",
-                          .packages = c("treesurgeon", "phytools")) %op% {
-
-    x2 <- x
-    x2[i, ] <- 1
-    true_state <- x[i, ]
-
-    if (drop.tip) {
-      tree_temp <- drop.tip(tree, tree$tip.label[i])
-      x_temp <- x[-i, , drop = FALSE]
-
-      object <- do.call(fitMk, c(
-        list(tree = tree_temp, x = x_temp,
-             model = model, fixedQ = fixedQ),
-        args.x))
-
-      object$data <- x2
-      object$tree <- tree
-
-    } else {
-      object <- do.call(fitMk, c(
-        list(tree = tree, x = x2,
-             model = model, fixedQ = fixedQ),
-        args.x))
+    if (!type %in% c("joint", "marginal")) {
+        stop("type must be either 'joint' or 'marginal'!")
     }
 
-    cv <- ancr(object, tips = TRUE, type = type)
+    args.x <- list(...)
 
-    if (!is.matrix(cv$ace)) {
-      cv$ace <- to.matrix(cv$ace, seq_len(m))
+    if (!is.matrix(x)) {
+        x <- to.matrix(x, sort(unique(x)))
     }
 
-    c(
-      Raw = treesurgeon::Raw(cv$ace[i, ], true_state),
-      Brier = treesurgeon::Brier(cv$ace[i, ], true_state),
-      `mean logL` = object$logLik
-    )
-  }
+    x <- x[tree$tip.label, ]
+    m <- ncol(x)
 
-  rowMeans(res)
+    `%op%` <- if (parallel) foreach::`%dopar%` else foreach::`%do%`
+
+    res <- foreach::foreach(
+        i = tips, .combine = "cbind",
+        .packages = c("treesurgeon", "phytools")
+    ) %op% {
+        x2 <- x
+        x2[i, ] <- 1
+        true_state <- x[i, ]
+
+        if (drop.tip) {
+            tree_temp <- drop.tip(tree, tree$tip.label[i])
+            x_temp <- x[-i, , drop = FALSE]
+
+            object <- do.call(fitMk, c(
+                list(
+                    tree = tree_temp, x = x_temp,
+                    model = model, fixedQ = fixedQ
+                ),
+                args.x
+            ))
+
+            object$data <- x2
+            object$tree <- tree
+        } else {
+            object <- do.call(fitMk, c(
+                list(
+                    tree = tree, x = x2,
+                    model = model, fixedQ = fixedQ
+                ),
+                args.x
+            ))
+        }
+
+        cv <- ancr(object, tips = TRUE, type = type)
+
+        if (!is.matrix(cv$ace)) {
+            cv$ace <- to.matrix(cv$ace, seq_len(m))
+        }
+
+        c(
+            Raw = treesurgeon::Raw(cv$ace[i, ], true_state),
+            Brier = treesurgeon::Brier(cv$ace[i, ], true_state),
+            `mean logL` = object$logLik
+        )
+    }
+
+    rowMeans(res)
 }
 
 
@@ -3600,44 +3529,47 @@ get_descendant_edges <- function(tree, current = T) {
 #' anc_timeslice(t1, x, slices = 10)
 #' @export
 
- anc_timeslice <- function (tree, x, slices = 10, model = c("BM", "BMT", "OU"), 
-    sigma2 = 1, mu = 0, alpha = 1, theta = 0, anc = NULL) 
-{
+anc_timeslice <- function(
+  tree, x, slices = 10, model = c("BM", "BMT", "OU"),
+  sigma2 = 1, mu = 0, alpha = 1, theta = 0, anc = NULL
+) {
     model <- match.arg(model)
-    if (!inherits(tree, "phylo")) 
+    if (!inherits(tree, "phylo")) {
         stop("tree must be of class 'phylo'")
-    if (is.null(tree$edge.length)) 
+    }
+    if (is.null(tree$edge.length)) {
         stop("tree must have edge lengths")
+    }
     if (is.null(names(x))) {
         names(x) <- tree$tip.label
         warning("x had no names; assuming order matches tree$tip.label")
     }
-	x <- x[tree$tip.label]
+    x <- x[tree$tip.label]
     Ntip <- length(tree$tip.label)
     Nnode <- tree$Nnode
     if (is.null(anc)) {
         if (model == "BM") {
             anc_states <- fastAnc(tree, x)
-        }
-        else if (model == "BMT") {
+        } else if (model == "BMT") {
             times <- node.depth.edgelength(tree)
             x_centered <- x - mu * times[seq_len(Ntip)]
             anc_states <- fastAnc(tree, x_centered)
-            anc_states <- anc_states + mu * times[(Ntip + 1):(Ntip + 
+            anc_states <- anc_states + mu * times[(Ntip + 1):(Ntip +
                 Nnode)]
+        } else if (model == "OU") {
+            anc_states <- anc.ML(tree, x,
+                model = "OU", sig2 = sigma2,
+                alpha = alpha, theta = theta
+            )$ace
         }
-        else if (model == "OU") {
-            anc_states <- anc.ML(tree, x, model = "OU", sig2 = sigma2, 
-                alpha = alpha, theta = theta)$ace
-        }
-    }
-    else {
-        if (length(anc) != Nnode) 
+    } else {
+        if (length(anc) != Nnode) {
             stop("anc must have length equal to number of internal nodes")
+        }
         anc_states <- anc
     }
     node_values <- c(x, anc_states)
-    names(node_values) <- c(seq_len(Ntip), (Ntip + 1):(Ntip + 
+    names(node_values) <- c(seq_len(Ntip), (Ntip + 1):(Ntip +
         Nnode))
     H <- nodeHeights(tree)
     Tmax <- max(H)
@@ -3646,11 +3578,11 @@ get_descendant_edges <- function(tree, current = T) {
     for (i in seq_along(tslice[-1])) {
         t <- tslice[-1][[i]]
         ii <- which(H[, 1] <= t & H[, 2] > t)
-        frac <- (t - H[ii, 1])/(H[ii, 2] - H[ii, 1])
+        frac <- (t - H[ii, 1]) / (H[ii, 2] - H[ii, 1])
         parent_nodes <- tree$edge[ii, 1]
         child_nodes <- tree$edge[ii, 2]
-        slice_vals <- node_values[as.character(parent_nodes)] + 
-            frac * (node_values[as.character(child_nodes)] - 
+        slice_vals <- node_values[as.character(parent_nodes)] +
+            frac * (node_values[as.character(child_nodes)] -
                 node_values[as.character(parent_nodes)])
         names(slice_vals) <- ii
         res[[i]] <- slice_vals
@@ -3660,10 +3592,10 @@ get_descendant_edges <- function(tree, current = T) {
     res <- c(list(root_slice), res)
     names(res) <- 0:(length(res) - 1)
     t100_tips <- which(round(node.depth.edgelength(tree), 8) == round(Tmax, 8))
-	t100_edges <- which(tree$edge[, 2] %in% t100_tips)
+    t100_edges <- which(tree$edge[, 2] %in% t100_tips)
     res[[slices + 1]] <- x[t100_tips]
-	names(res[[slices + 1]]) <- t100_edges
-	return(res)
+    names(res[[slices + 1]]) <- t100_edges
+    return(res)
 }
 
 #' Species Sorting
@@ -3785,7 +3717,7 @@ get_descendant_edges <- function(tree, current = T) {
 
 sp_sorting <- function(tree, x, anc = NULL, slices) {
     tslice <- anc_timeslice(tree, x, slices = slices, anc = anc)
-	root_x <- tslice[[1]]
+    root_x <- tslice[[1]]
     desc_edges <- get_descendant_edges(tree)
     res <- data.frame()
     for (i in 2:(length(tslice))) {
@@ -3876,45 +3808,44 @@ sp_sorting <- function(tree, x, anc = NULL, slices) {
 #' Function that estimates ancestral trait values along each edge of a phylogenetic tree, based on a continuous trait and a user-specified number of time slices.
 #' @param tree 	an object of class 'phylo'.
 #' @return Returns a numeric vector of internal node ages, where names() are node numbers.
-#' @details This function calculates the ages of internal nodes in a phylogenetic tree with branch lengths and a specified root time. It computes the distance from the root to each internal node and converts these distances into absolute ages by subtracting them from the root time.     
+#' @details This function calculates the ages of internal nodes in a phylogenetic tree with branch lengths and a specified root time. It computes the distance from the root to each internal node and converts these distances into absolute ages by subtracting them from the root time.
 #' @examples
 #' data(vert_data)
 #' get_node_ages(vert_data)
-#' @export 
+#' @export
 
 get_node_ages <- function(tree) {
-    
     # Check: phylo object
     if (!inherits(tree, "phylo")) {
         stop("tree must be an object of class 'phylo'")
     }
-    
+
     # Check: branch lengths
     if (is.null(tree$edge.length)) {
         stop("tree must have branch lengths")
     }
-    
+
     # Check: root.time
     if (is.null(tree$root.time)) {
         stop("tree must have a 'root.time' element")
     }
-    
+
     if (!is.numeric(tree$root.time) || length(tree$root.time) != 1) {
         stop("'root.time' must be a single numeric value")
     }
-    
+
     root.time <- tree$root.time
-    
+
     # Distance from root to all nodes
     ndel <- ape::node.depth.edgelength(tree)
-    
+
     # Internal nodes only
     node_ages <- tail(ndel, ape::Nnode(tree))
-    
+
     # Convert distances to absolute ages
     node_ages <- abs(node_ages - root.time)
-    
+
     names(node_ages) <- seq_len(ape::Nnode(tree)) + length(tree$tip.label)
-    
+
     return(node_ages)
 }
