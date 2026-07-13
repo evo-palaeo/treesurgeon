@@ -1790,10 +1790,18 @@ write_nexdat <- function(x,
         datatype <- tolower(datatype)
 
         if (datatype %in% c("morph", "standard")) {
-            cat(
-                "\tFORMAT DATATYPE=STANDARD RESPECTCASE GAP=- MISSING=?;\n",
-                file = con
-            )
+          
+          symbols <- get_symbols(dat)
+          
+          cat(
+            paste0(
+              '\tFORMAT DATATYPE = STANDARD RESPECTCASE GAP = - MISSING = ? SYMBOLS = " ',
+              symbols,
+              '";\n'
+            ),
+            file = con
+          )
+          
         } else {
             cat(
                 paste0(
@@ -1865,6 +1873,28 @@ write_nexdat <- function(x,
         cat("\t;\n\nEND;\n\n", file = con)
     }
 
+    
+    # ------------------------------------------------------------
+    # Helper function to determine symbols used in a standard matrix.
+    # ------------------------------------------------------------
+    
+    get_symbols <- function(dat) {
+      
+      chars <- unlist(dat)
+      
+      # Remove polymorphism / uncertainty notation
+      chars <- gsub("[(){}]", "", chars)
+      
+      # Split into individual symbols
+      chars <- unlist(strsplit(paste(chars, collapse = ""), ""))
+      
+      # Remove missing, gaps and whitespace
+      chars <- setdiff(chars, c("?", "-", " "))
+      
+      paste(sort(unique(chars)), collapse = " ")
+    }    
+    
+    
     # ------------------------------------------------------------
     # SINGLE nexdat OBJECT
     # ------------------------------------------------------------
