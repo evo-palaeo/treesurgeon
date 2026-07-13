@@ -1790,18 +1790,16 @@ write_nexdat <- function(x,
         datatype <- tolower(datatype)
 
         if (datatype %in% c("morph", "standard")) {
-          
-          symbols <- get_symbols(dat)
-          
-          cat(
-            paste0(
-              '\tFORMAT DATATYPE = STANDARD RESPECTCASE GAP = - MISSING = ? SYMBOLS = " ',
-              symbols,
-              '";\n'
-            ),
-            file = con
-          )
-          
+            symbols <- get_symbols(dat)
+
+            cat(
+                paste0(
+                    '\tFORMAT DATATYPE = STANDARD RESPECTCASE GAP = - MISSING = ? SYMBOLS = " ',
+                    symbols,
+                    '";\n'
+                ),
+                file = con
+            )
         } else {
             cat(
                 paste0(
@@ -1873,28 +1871,27 @@ write_nexdat <- function(x,
         cat("\t;\n\nEND;\n\n", file = con)
     }
 
-    
+
     # ------------------------------------------------------------
     # Helper function to determine symbols used in a standard matrix.
     # ------------------------------------------------------------
-    
+
     get_symbols <- function(dat) {
-      
-      chars <- unlist(dat)
-      
-      # Remove polymorphism / uncertainty notation
-      chars <- gsub("[(){}]", "", chars)
-      
-      # Split into individual symbols
-      chars <- unlist(strsplit(paste(chars, collapse = ""), ""))
-      
-      # Remove missing, gaps and whitespace
-      chars <- setdiff(chars, c("?", "-", " "))
-      
-      paste(sort(unique(chars)), collapse = " ")
-    }    
-    
-    
+        chars <- unlist(dat)
+
+        # Remove polymorphism / uncertainty notation
+        chars <- gsub("[(){}]", "", chars)
+
+        # Split into individual symbols
+        chars <- unlist(strsplit(paste(chars, collapse = ""), ""))
+
+        # Remove missing, gaps and whitespace
+        chars <- setdiff(chars, c("?", "-", " "))
+
+        paste(sort(unique(chars)), collapse = " ")
+    }
+
+
     # ------------------------------------------------------------
     # SINGLE nexdat OBJECT
     # ------------------------------------------------------------
@@ -2177,6 +2174,140 @@ write_nexdat <- function(x,
     invisible(file)
 }
 
+
+#' Write phylogenetic data to a PHYLIP file
+#'
+#' Export a \code{"nexdat"} or \code{"multi_nexdat"} object to a
+#' sequential PHYLIP-formatted alignment file.
+#'
+#' @param x An object of class \code{"nexdat"},
+#'   \code{"multi_nexdat"}, or a list equivalent to the output of
+#'   \code{ape::read.nexus.data()}.
+#'
+#' @param file Character string giving the output file name.
+#'
+#' @return Invisibly returns the output file path(s).
+#'
+#' @details
+#' This function writes phylogenetic character matrices in sequential
+#' PHYLIP format.
+#'
+#' Objects of class \code{"nexdat"} (or ordinary lists produced by
+#' \code{ape::read.nexus.data()}) are written as a single PHYLIP file.
+#'
+#' Objects of class \code{"multi_nexdat"} are written as one PHYLIP file
+#' per partition because the PHYLIP format does not support mixed
+#' datatypes or partition definitions.
+#'
+#' Taxon names are written exactly as supplied and are not truncated.
+#'
+#' @examples
+#' data(Lavoue2016)
+#'
+#' ## Single alignment
+#' write_phylip(
+#'     Lavoue2016$dna,
+#'     file = "dna.phy"
+#' )
+#'
+#' ## Partitioned dataset
+#' x <- cat_data(
+#'     Lavoue2016$standard,
+#'     Lavoue2016$dna,
+#'     use.part.info = TRUE
+#' )
+#'
+#' write_phylip(
+#'     x,
+#'     file = "partitions.phy"
+#' )
+#'
+#' @export
+#'
+write_phylip <- function(x,
+                         file = "output.phy") {
+    if (!inherits(x, c("nexdat", "multi_nexdat", "list"))) {
+        stop(
+            "Object must be class 'nexdat', 'multi_nexdat', or a list."
+        )
+    }
+
+    # ------------------------------------------------------------
+    # Helper function for writing a single PHYLIP file
+    # ------------------------------------------------------------
+
+    write_single_phylip <- function(dat, outfile) {
+        taxa <- names(dat)
+
+        ntax <- length(dat)
+        nchar <- length(dat[[1]])
+
+        seqs <- lapply(dat, paste0, collapse = "")
+
+        con <- file(outfile, open = "w")
+
+        on.exit(close(con))
+
+        cat(
+            sprintf(
+                "%d %d\n",
+                ntax,
+                nchar
+            ),
+            file = con
+        )
+
+        for (tx in taxa) {
+            cat(
+                sprintf(
+                    "%-30s %s\n",
+                    tx,
+                    seqs[[tx]]
+                ),
+                file = con
+            )
+        }
+    }
+
+    # ------------------------------------------------------------
+    # SINGLE nexdat (or ordinary list)
+    # ------------------------------------------------------------
+
+    if (!inherits(x, "multi_nexdat")) {
+        write_single_phylip(
+            dat = x,
+            outfile = file
+        )
+
+        return(invisible(file))
+    }
+
+    # ------------------------------------------------------------
+    # MULTI nexdat
+    # ------------------------------------------------------------
+
+    outfiles <- character(length(x))
+
+    for (i in seq_along(x)) {
+        part_name <- names(x)[i]
+
+        outfile <- paste0(
+            tools::file_path_sans_ext(file),
+            "_",
+            part_name,
+            ".phy"
+        )
+
+        write_single_phylip(
+            dat = x[[i]],
+            outfile = outfile
+        )
+
+        outfiles[i] <- outfile
+    }
+
+    invisible(outfiles)
+}
 
 #' Combine phylogenetic data partitions
 #'
