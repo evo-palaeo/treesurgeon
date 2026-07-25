@@ -1216,6 +1216,28 @@ get_contrast <- function(morph) {
 #'
 #' @return An object of class `"timescale_calibration"`.
 #'
+#' @examples
+#' ## Vertebrate calibration from Benton et al. (2015):
+#' ## hard minimum = 457.5 Ma, soft maximum = 636.1 Ma.
+#'
+#' par(mfrow = c(2, 1), mar = c(2.2, 2.2, 1.5, 1.5))
+#'
+#' ## Good fossil record (95% of the probability lies below the soft maximum)
+#' calib <- exp_calib(
+#'     age_min = 457.5,
+#'     age_max = 636.1,
+#'     position = 0.95
+#' )
+#' print(calib)
+#' plot(calib, xlim = c(400, 1000))
+#'
+#' ## Poor fossil record (75% of the probability lies below the soft maximum)
+#' calib <- exp_calib(
+#'     age_min = 457.5,
+#'     age_max = 636.1,
+#'     position = 0.75
+#' )
+#' plot(calib, xlim = c(400, 1000))
 #' @export
 
 exp_calib <- function(age_min,
@@ -1257,6 +1279,40 @@ exp_calib <- function(age_min,
 #'
 #' @return An object of class `"timescale_calibration"`.
 #'
+#' @examples
+#' ## Vertebrate calibration from Benton et al. (2015):
+#' ## hard minimum = 457.5 Ma, soft maximum = 636.1 Ma.
+#'
+#' par(mfrow = c(3, 1), mar = c(2.2, 2.2, 1.5, 1.5))
+#'
+#' ## Good fossil record with most probability concentrated close to
+#' ## the hard minimum.
+#' calib <- gamma_calib(
+#'     age_min = 457.5,
+#'     age_max = 636.1,
+#'     shape = 1,
+#'     position = 0.95
+#' )
+#' plot(calib, xlim = c(400, 1000))
+#'
+#' ## Good fossil record with probability concentrated further from
+#' ## the hard minimum.
+#' calib <- gamma_calib(
+#'     age_min = 457.5,
+#'     age_max = 636.1,
+#'     shape = 3,
+#'     position = 0.95
+#' )
+#' plot(calib, xlim = c(400, 1000))
+#'
+#' ## Poor fossil record with a long tail beyond the soft maximum.
+#' calib <- gamma_calib(
+#'     age_min = 457.5,
+#'     age_max = 636.1,
+#'     shape = 3,
+#'     position = 0.75
+#' )
+#' plot(calib, xlim = c(400, 1000))
 #' @export
 
 gamma_calib <- function(age_min,
