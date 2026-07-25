@@ -1306,10 +1306,9 @@ gamma_calib <- function(age_min,
             distribution = "gamma",
             age_min = age_min,
             age_max = age_max,
-            offset = age_min,
-            shape = shape,
+            position = position,
             rate = rate,
-            position = position
+            shape = shape
         ),
         class = "timescale_calibration"
     )
@@ -1319,8 +1318,8 @@ gamma_calib <- function(age_min,
 # Internal helper function.
 .calibration_mean <- function(x) {
     switch(x$distribution,
-        exponential = x$offset + 1 / x$rate,
-        gamma = x$offset + x$shape / x$rate
+        exponential = x$age_min + 1 / x$rate,
+        gamma = x$age_min + x$shape / x$rate
     )
 }
 
@@ -1333,6 +1332,146 @@ gamma_calib <- function(age_min,
         gamma = sqrt(x$shape) / x$rate
     )
 }
+
+#' Print a node calibration
+#'
+#' Prints a summary of a node calibration, including its parameters
+#' and summary statistics.
+#'
+#' @param x An object of class `"timescale_calibration"`.
+#' @param digits Number of significant digits to print.
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return The calibration object, invisibly.
+#'
+#' @export
+
+print.timescale_calibration <- function(x, digits = 3, ...) {
+    cat(
+        switch(x$distribution,
+            exponential = "Exponential node calibration\n",
+            gamma = "Gamma node calibration\n"
+        )
+    )
+
+    cat("\n")
+
+    cat(sprintf("Hard minimum : %.*f Ma\n", digits, x$age_min))
+    cat(sprintf("Soft maximum : %.*f Ma\n", digits, x$age_max))
+    cat(sprintf("Position     : %.*f\n", digits, x$position))
+
+    if (x$distribution == "gamma") {
+        cat(sprintf("Shape        : %.*f\n", digits, x$shape))
+    }
+
+    cat(sprintf("Rate         : %.*f\n", digits, x$rate))
+    cat(sprintf(
+        "Mean         : %.*f Ma\n",
+        digits, .calibration_mean(x)
+    ))
+    cat(sprintf(
+        "SD           : %.*f My\n",
+        digits, .calibration_sd(x)
+    ))
+
+    invisible(x)
+}
+
+#' Evaluate the probability density of a node calibration
+#'
+#' Evaluates the probability density function of a node calibration at
+#' one or more ages.
+#'
+#' @param x An object of class `"timescale_calibration"`.
+#' @param age A numeric vector of ages (Ma).
+#' @param log Logical. Should the log-density be returned?
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return A numeric vector of probability densities.
+#'
+#' @export
+
+density.timescale_calibration <- function(x,
+                                          age,
+                                          log = FALSE,
+                                          ...) {
+    age <- as.numeric(age)
+
+    density <- switch(x$distribution,
+        exponential = dexp(
+            age - x$age_min,
+            rate = x$rate,
+            log = log
+        ),
+        gamma = dgamma(
+            age - x$age_min,
+            shape = x$shape,
+            rate = x$rate,
+            log = log
+        )
+    )
+
+    density[age < x$age_min] <- if (log) -Inf else 0
+
+    density
+}
+
+#' Plot a node calibration
+#'
+#' Plots the probability density of a node calibration.
+#'
+#' @param x An object of class `"timescale_calibration"`.
+#' @param from Lower age limit. Defaults to the hard minimum age.
+#' @param to Upper age limit. Defaults to the 99.9th percentile of the
+#' calibration distribution.
+#' @param n Number of points used to draw the curve.
+#' @param ... Further graphical arguments passed to [plot()].
+#'
+#' @return Invisibly returns `x`.
+#'
+#' @export
+
+plot.timescale_calibration <- function(x,
+                                       from = x$age_min,
+                                       to = NULL,
+                                       n = 1000,
+                                       ...) {
+    if (is.null(to)) {
+        to <- switch(x$distribution,
+            exponential = x$age_min +
+                qexp(0.999, rate = x$rate),
+            gamma = x$age_min +
+                qgamma(0.999,
+                    shape = x$shape,
+                    rate = x$rate
+                )
+        )
+    }
+
+    age <- seq(from, to, length.out = n)
+
+    plot(
+        age,
+        density(x, age),
+        type = "l",
+        xlab = "Age (Ma)",
+        ylab = "Density",
+        ...
+    )
+
+    abline(
+        v = x$age_min,
+        lty = 2
+    )
+
+    abline(
+        v = x$age_max,
+        lty = 3
+    )
+
+    invisible(x)
+}
+
 
 #' Remove partition information
 #'
