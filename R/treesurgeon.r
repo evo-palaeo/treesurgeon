@@ -1528,6 +1528,57 @@ plot.timescale_calibration <- function(x,
     invisible(x)
 }
 
+#' Summarise a node calibration
+#'
+#' Prints a summary of a node calibration, including its parameters
+#' and summary statistics.
+#'
+#' @param object An object of class `"timescale_calibration"`.
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return The calibration object, invisibly.
+#'
+#' @export
+
+summary.timescale_calibration <- function(object, ...) {
+    print(object, ...)
+}
+
+#' Quantiles of a node calibration
+#'
+#' Computes quantiles of a node calibration distribution.
+#'
+#' @param x An object of class `"timescale_calibration"`.
+#' @param probs Numeric vector of probabilities.
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return A numeric vector of quantiles (Ma).
+#'
+#' @export
+
+quantile.timescale_calibration <- function(x,
+                                           probs = c(0, 0.25, 0.5, 0.75, 1),
+                                           ...) {
+    if (any(probs < 0 | probs > 1)) {
+        stop("'probs' must lie between 0 and 1.")
+    }
+
+    q <- switch(x$distribution,
+        exponential = x$age_min +
+            qexp(probs, rate = x$rate),
+        gamma = x$age_min +
+            qgamma(
+                probs,
+                shape = x$shape,
+                rate = x$rate
+            )
+    )
+
+    names(q) <- paste0(probs * 100, "%")
+
+    q
+}
+
 
 #' Remove partition information
 #'
