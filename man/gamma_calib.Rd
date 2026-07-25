@@ -2,40 +2,24 @@
 % Please edit documentation in R/treesurgeon.r
 \name{gamma_calib}
 \alias{gamma_calib}
-\title{Generate a gamma-shaped node calibration}
+\title{Generate a gamma node calibration}
 \usage{
-gamma_calib(age_min, age_max, position, xlim = NULL, ylim = NULL)
+gamma_calib(age_min, age_max, shape, position = 0.95)
 }
 \arguments{
-\item{age_min}{hard minimum fossil calibration.}
+\item{age_min}{Hard minimum fossil calibration.}
 
-\item{age_max}{soft maximum fossil calibration.}
+\item{age_max}{Soft maximum fossil calibration.}
 
-\item{shape}{shape parameter for the gamma distribution.}
+\item{shape}{Gamma shape parameter.}
 
-\item{position}{numeric value between 0 and 1, which determines the percentile of the soft maximum age.}
-
-\item{xlim}{numeric vector defining the dimensions of the x axis. If NULL, xlim is determined automatically.}
-
-\item{ylim}{numeric vector defining the dimensions of the y axis. If NULL, ylim is determined automatically.}
+\item{position}{Cumulative probability associated with the soft
+maximum age.}
 }
 \value{
-a histogram of the prior distribution with labelled soft maximum and hard minimum fossil calibrations. The function also prints the mrbayes command for defining the calibration.
+An object of class `"timescale_calibration"`.
 }
 \description{
-Function to generate a gamma-shaped node calibration for Bayesian molecular clock analysis.
-}
-\examples{
-## vertebrate calibration from Benton et al (2015): hard min = 457.5, soft max = 636.1.
-par(mar = c(2.2, 2.2, 1.5, 1.5))
-par(mfrow = c(3, 1))
-## plot calibration assuming a low probability the age of the node is older than the soft maximum age and a low probability the age of the node is older than the hard-minimum age.
-gamma_calib(457.5, 636.1, 1, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
-## plot calibration assuming a low probability the age of the node is older than the soft maximum age and a high probability the age of the node is older than the hard-minimum age.
-gamma_calib(457.5, 636.1, 3, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
-## plot calibration assuming a high probability the age of the node is older than the soft maximum age and a high probability the age of the node is older than the hard-minimum age.
-gamma_calib(457.5, 636.1, 3, 0.75, xlim = c(0, 1000), ylim = c(0, 0.025))
-}
-\references{
-Benton, M.J., Donoghue, P.C., Asher, R.J., Friedman, M., Near, T.J. and Vinther, J., 2015. Constraints on the timescale of animal evolutionary history.
+Constructs a gamma node calibration from a hard minimum and
+soft maximum age.
 }

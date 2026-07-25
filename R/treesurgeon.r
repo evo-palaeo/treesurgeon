@@ -1206,126 +1206,133 @@ get_contrast <- function(morph) {
 
 #' Generate an exponential node calibration
 #'
-#' Function to generate an exponential node calibration for Bayesian molecular clock analysis.
-#' @usage exp_calib(age_min, age_max, position, xlim = NULL, ylim = NULL)
-#' @param age_min hard minimum fossil calibration.
-#' @param age_max soft maximum fossil calibration.
-#' @param position numeric value between 0 and 1, which determines the percentile of the soft maximum age.
-#' @param xlim numeric vector defining the dimensions of the x axis. If NULL, xlim is determined automatically.
-#' @param ylim numeric vector defining the dimensions of the y axis. If NULL, ylim is determined automatically.
-#' @return a histogram of the prior distribution with labelled soft maximum and hard minimum fossil calibrations. The function also prints the mrbayes command for defining the calibration.
-#' @references Benton, M.J., Donoghue, P.C., Asher, R.J., Friedman, M., Near, T.J. and Vinther, J., 2015. Constraints on the timescale of animal evolutionary history.
-#' @examples
-#' ## vertebrate calibration from Benton et al (2015): hard min = 457.5, soft max = 636.1.
-#' par(mar = c(2.2, 2.2, 1.5, 1.5))
-#' par(mfrow = c(2, 1))
-#' ## plot calibration assuming a very good fossil record (i.e. low probability the age of the node is older than the soft maximum)
-#' exp_calib(457.5, 636.1, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
-#' ## plot calibration assuming a poor fossil record (i.e. high probability the age of the node is older than the soft maximum)
-#' exp_calib(457.5, 636.1, 0.75, xlim = c(0, 1000), ylim = c(0, 0.025))
-#' @export
-
-exp_calib <- function(age_min, age_max, position, xlim = NULL, ylim = NULL) {
-    if (position > 1 | position <= 0) {
-        stop("position must be between 0 and 1")
-    }
-    if (age_min >= age_max) {
-        stop("age_min must be < age_max")
-    }
-    diff <- age_max - age_min
-    scale_param <- (log((position - 1) * -1) / diff) * -1
-    mean_calib <- 1 / scale_param
-    x <- rexp(100000, rate = scale_param) + age_min
-    age <- seq(from = age_min, to = max(x), length.out = 100)
-    d <- dexp(x = seq(from = 0, to = max(x) - age_min, length.out = 100), rate = scale_param)
-    df <- data.frame(age = age, d = d)
-    df <- rbind(data.frame(age = c(0, age_min - 0.00001), d = c(0, 0)), df)
-    df <- rbind(df, data.frame(age = max(x) * 100, d = 0))
-    if (is.null(xlim)) {
-        xlim <- c(0, max(x))
-    }
-    if (is.null(ylim)) {
-        ylim <- c(0, max(d))
-    }
-    plot(df, type = "l", xlim = xlim, ylim = ylim, main = paste("Hard minimum = ", age_min, ", soft maximum = ", age_max, ", percentile = ", position * 100, sep = ""), xlab = "Age", cex.main = 0.9, ylab = "Density")
-    abline(v = age_max, col = "blue")
-    abline(v = age_min, col = "red")
-    return(cat("offsetexp(", age_min, ", ", age_min + mean_calib, ");", "\n", sep = ""))
-}
-
-#' Generate a gamma-shaped node calibration
+#' Constructs an exponential node calibration from a hard minimum and
+#' soft maximum age.
 #'
-#' Function to generate a gamma-shaped node calibration for Bayesian molecular clock analysis.
-#' @usage gamma_calib(age_min, age_max, position, xlim = NULL, ylim = NULL)
-#' @param age_min hard minimum fossil calibration.
-#' @param age_max soft maximum fossil calibration.
-#' @param shape shape parameter for the gamma distribution.
-#' @param position numeric value between 0 and 1, which determines the percentile of the soft maximum age.
-#' @param xlim numeric vector defining the dimensions of the x axis. If NULL, xlim is determined automatically.
-#' @param ylim numeric vector defining the dimensions of the y axis. If NULL, ylim is determined automatically.
-#' @return a histogram of the prior distribution with labelled soft maximum and hard minimum fossil calibrations. The function also prints the mrbayes command for defining the calibration.
-#' @references Benton, M.J., Donoghue, P.C., Asher, R.J., Friedman, M., Near, T.J. and Vinther, J., 2015. Constraints on the timescale of animal evolutionary history.
-#' @examples
-#' ## vertebrate calibration from Benton et al (2015): hard min = 457.5, soft max = 636.1.
-#' par(mar = c(2.2, 2.2, 1.5, 1.5))
-#' par(mfrow = c(3, 1))
-#' ## plot calibration assuming a low probability the age of the node is older than the soft maximum age and a low probability the age of the node is older than the hard-minimum age.
-#' gamma_calib(457.5, 636.1, 1, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
-#' ## plot calibration assuming a low probability the age of the node is older than the soft maximum age and a high probability the age of the node is older than the hard-minimum age.
-#' gamma_calib(457.5, 636.1, 3, 0.99, xlim = c(0, 1000), ylim = c(0, 0.025))
-#' ## plot calibration assuming a high probability the age of the node is older than the soft maximum age and a high probability the age of the node is older than the hard-minimum age.
-#' gamma_calib(457.5, 636.1, 3, 0.75, xlim = c(0, 1000), ylim = c(0, 0.025))
+#' @param age_min Hard minimum fossil calibration.
+#' @param age_max Soft maximum fossil calibration.
+#' @param position Cumulative probability associated with the soft
+#' maximum age (e.g. 0.95).
+#'
+#' @return An object of class `"timescale_calibration"`.
+#'
 #' @export
 
-gamma_calib <- function(age_min, age_max, shape, position, xlim = NULL, ylim = NULL) {
-    if (position > 1 | position <= 0) {
-        stop("position must be between 0 and 1")
+exp_calib <- function(age_min,
+                      age_max,
+                      position = 0.95) {
+    if (position <= 0 || position >= 1) {
+        stop("'position' must lie between 0 and 1.")
     }
+
     if (age_min >= age_max) {
-        stop("age_min must be < age_max")
+        stop("'age_min' must be less than 'age_max'.")
     }
-    diff <- age_max - age_min
-    x <- c(runif(100, 0.000001, 0.00001), runif(100, 0.00001, 0.0001), runif(100, 0.0001, 0.001), runif(100, 0.001, 0.01), runif(100, 0.01, 0.1), runif(100, 0.1, 1), runif(100, 1, 10), runif(100, 10, 100), runif(100, 100, 1000), runif(100, 1000, 10000))
-    tests <- unlist(lapply(x, function(y) pgamma(q = diff, shape = shape, rate = y)))
-    tests <- data.frame(x = x, tests = tests)
-    tests <- tests[order(tests$tests), ]
 
-    l_bound <- tests$x[[max(which(as.numeric(tests$tests) <= position))]]
-    u_bound <- tests$x[[min(which(as.numeric(tests$tests) >= position))]]
+    rate <- -log(1 - position) /
+        (age_max - age_min)
 
-    for (i in 1:1000) {
-        x <- runif(10000, l_bound, u_bound)
-        tests <- unlist(lapply(x, function(y) pgamma(q = diff, shape = shape, rate = y)))
-        tests <- data.frame(x = x, tests = tests)
-        tests <- tests[order(tests$tests), ]
-
-        l_bound <- tests$x[[max(which(as.numeric(tests$tests) <= position))]]
-        u_bound <- tests$x[[min(which(as.numeric(tests$tests) >= position))]]
-        if (round(l_bound, 8) == round(u_bound, 8)) {
-            break
-        }
-    }
-    rate_param <- mean(c(l_bound, u_bound))
-    mean_calib <- shape / rate_param
-    x <- rgamma(100000, shape = shape, rate = rate_param) + age_min
-    if (is.null(xlim)) {
-        xlim <- c(0, max(x))
-    }
-    age <- seq(from = age_min, to = max(x), length.out = 100)
-    d <- dgamma(x = seq(from = 0, to = max(x) - age_min, length.out = 100), shape = shape, rate = rate_param)
-    df <- data.frame(age = age, d = d)
-    if (is.null(ylim)) {
-        ylim <- c(0, max(d))
-    }
-    df <- rbind(data.frame(age = c(0, age_min - 0.00001), d = c(0, 0)), df)
-    df <- rbind(df, data.frame(age = max(x) * 100, d = 0))
-    plot(df, type = "l", xlim = xlim, ylim = ylim, main = paste("Hard minimum = ", age_min, ", soft maximum = ", age_max, ", shape = ", shape, ", percentile = ", position * 100, sep = ""), xlab = "Age", cex.main = 0.9, ylab = "Density")
-    abline(v = age_max, col = "blue")
-    abline(v = age_min, col = "red")
-    sd_dist <- sqrt(shape) / rate_param
-    return(cat("offsetgamma(", age_min, ", ", age_min + mean_calib, ", ", sd_dist, ");", "\n", sep = ""))
+    structure(
+        list(
+            distribution = "exponential",
+            age_min = age_min,
+            age_max = age_max,
+            position = position,
+            rate = rate
+        ),
+        class = "timescale_calibration"
+    )
 }
 
+#' Generate a gamma node calibration
+#'
+#' Constructs a gamma node calibration from a hard minimum and
+#' soft maximum age.
+#'
+#' @param age_min Hard minimum fossil calibration.
+#' @param age_max Soft maximum fossil calibration.
+#' @param shape Gamma shape parameter.
+#' @param position Cumulative probability associated with the soft
+#' maximum age.
+#'
+#' @return An object of class `"timescale_calibration"`.
+#'
+#' @export
+
+gamma_calib <- function(age_min,
+                        age_max,
+                        shape,
+                        position = 0.95) {
+    if (position <= 0 || position >= 1) {
+        stop("'position' must lie between 0 and 1.")
+    }
+
+    if (age_min >= age_max) {
+        stop("'age_min' must be less than 'age_max'.")
+    }
+
+    if (shape <= 0) {
+        stop("'shape' must be positive.")
+    }
+    target <- age_max - age_min
+
+    objective <- function(rate) {
+        pgamma(
+            target,
+            shape = shape,
+            rate = rate
+        ) - position
+    }
+
+    lower <- 1e-12
+
+    if (objective(lower) > 0) {
+        stop("Could not bracket the root.")
+    }
+
+    upper <- 1
+
+    while (objective(upper) < 0) {
+        upper <- upper * 2
+    }
+
+    rate <- uniroot(
+        objective,
+        interval = c(lower, upper)
+    )$root
+
+    structure(
+        list(
+            distribution = "gamma",
+            age_min = age_min,
+            age_max = age_max,
+            offset = age_min,
+            shape = shape,
+            rate = rate,
+            position = position
+        ),
+        class = "timescale_calibration"
+    )
+}
+
+# Get the mean of a calibration distribution
+# Internal helper function.
+.calibration_mean <- function(x) {
+    switch(x$distribution,
+        exponential = x$offset + 1 / x$rate,
+        gamma = x$offset + x$shape / x$rate
+    )
+}
+
+# Get the standard deviation of a calibration distribution
+# Internal helper function.
+
+.calibration_sd <- function(x) {
+    switch(x$distribution,
+        exponential = 1 / x$rate,
+        gamma = sqrt(x$shape) / x$rate
+    )
+}
 
 #' Remove partition information
 #'
