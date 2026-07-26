@@ -47,6 +47,26 @@
 "KeatingDonoghue"
 
 
+#' Tree from Keating & Donoghue 2016
+#'
+#' Phylogenetic tree inferred from the morphological matrix of Keating & Donoghue 2016.
+#'
+#' @docType data
+#'
+#' @usage data(KeatingDonoghueTree)
+#'
+#' @format an object of class "phylo".
+#'
+#' @keywords datasets
+#'
+#' @references Keating, J.N. and Donoghue, P.C., 2016. Histology and affinity of anaspids, and the early evolution of the vertebrate dermal skeleton. Proceedings of the Royal Society B: Biological Sciences, 283(1826), p.20152917.
+#'
+#' @examples
+#' data(KeatingDonoghueTree)
+#' plot(KeatingDonoghueTree)
+"KeatingDonoghueTree"
+
+
 #' Dinosaur-bird integument data
 #'
 #' Phylogeny and associated integument character data modified from Cockx et al (2024, in prep).
