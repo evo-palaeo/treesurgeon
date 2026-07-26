@@ -1531,13 +1531,25 @@ plot.timescale_calibration <- function(x,
                                        ...) {
     if (is.null(to)) {
         to <- switch(x$distribution,
-            exponential = x$age_min +
-                qexp(0.999, rate = x$rate),
-            gamma = x$age_min +
-                qgamma(0.999,
-                    shape = x$shape,
-                    rate = x$rate
+            exponential =
+                x$age_min +
+                    qexp(0.999, rate = x$rate),
+            gamma =
+                x$age_min +
+                    qgamma(
+                        0.999,
+                        shape = x$shape,
+                        rate = x$rate
+                    ),
+            uniform =
+                x$age_max +
+                    0.05 * (x$age_max - x$age_min),
+            stop(
+                sprintf(
+                    "Unknown calibration distribution '%s'.",
+                    x$distribution
                 )
+            )
         )
     }
 
@@ -1552,15 +1564,8 @@ plot.timescale_calibration <- function(x,
         ...
     )
 
-    abline(
-        v = x$age_min,
-        lty = 2
-    )
-
-    abline(
-        v = x$age_max,
-        lty = 3
-    )
+    abline(v = x$age_min, lty = 2)
+    abline(v = x$age_max, lty = 3)
 
     invisible(x)
 }
