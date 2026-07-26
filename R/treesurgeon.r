@@ -1443,25 +1443,35 @@ print.timescale_calibration <- function(x, digits = 3, ...) {
     cat(
         switch(x$distribution,
             exponential = "Exponential node calibration\n",
-            gamma = "Gamma node calibration\n"
+            gamma = "Gamma node calibration\n",
+            uniform = "Uniform node calibration\n"
         )
     )
 
     cat("\n")
 
     cat(sprintf("Hard minimum : %.*f Ma\n", digits, x$age_min))
-    cat(sprintf("Soft maximum : %.*f Ma\n", digits, x$age_max))
-    cat(sprintf("Position     : %.*f\n", digits, x$position))
+
+    if (x$distribution == "uniform") {
+        cat(sprintf("Hard maximum : %.*f Ma\n", digits, x$age_max))
+    } else {
+        cat(sprintf("Soft maximum : %.*f Ma\n", digits, x$age_max))
+        cat(sprintf("Position     : %.*f\n", digits, x$position))
+    }
 
     if (x$distribution == "gamma") {
         cat(sprintf("Shape        : %.*f\n", digits, x$shape))
     }
 
-    cat(sprintf("Rate         : %.*f\n", digits, x$rate))
+    if (x$distribution != "uniform") {
+        cat(sprintf("Rate         : %.*f\n", digits, x$rate))
+    }
+
     cat(sprintf(
         "Mean         : %.*f Ma\n",
         digits, .calibration_mean(x)
     ))
+
     cat(sprintf(
         "SD           : %.*f My\n",
         digits, .calibration_sd(x)
@@ -1491,17 +1501,26 @@ density.timescale_calibration <- function(x,
     age <- as.numeric(age)
 
     density <- switch(x$distribution,
-        exponential = dexp(
-            age - x$age_min,
-            rate = x$rate,
-            log = log
-        ),
-        gamma = dgamma(
-            age - x$age_min,
-            shape = x$shape,
-            rate = x$rate,
-            log = log
-        )
+        exponential =
+            dexp(
+                age - x$age_min,
+                rate = x$rate,
+                log = log
+            ),
+        gamma =
+            dgamma(
+                age - x$age_min,
+                shape = x$shape,
+                rate = x$rate,
+                log = log
+            ),
+        uniform =
+            dunif(
+                age,
+                min = x$age_min,
+                max = x$age_max,
+                log = log
+            )
     )
 
     density[age < x$age_min] <- if (log) -Inf else 0
@@ -1606,13 +1625,21 @@ quantile.timescale_calibration <- function(x,
     }
 
     q <- switch(x$distribution,
-        exponential = x$age_min +
-            qexp(probs, rate = x$rate),
-        gamma = x$age_min +
-            qgamma(
+        exponential =
+            x$age_min +
+                qexp(probs, rate = x$rate),
+        gamma =
+            x$age_min +
+                qgamma(
+                    probs,
+                    shape = x$shape,
+                    rate = x$rate
+                ),
+        uniform =
+            qunif(
                 probs,
-                shape = x$shape,
-                rate = x$rate
+                min = x$age_min,
+                max = x$age_max
             )
     )
 
