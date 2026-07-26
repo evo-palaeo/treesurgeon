@@ -5139,38 +5139,3 @@ build_time_tree <- function(state, model) {
 
     tree
 }
-
-## Load example tree
-tree <- KeatingDonoghueTree
-
-## Specify node calibrations
-calibrations <- vector("list", Ntip(tree) + Nnode(tree))
-
-calibrations[[22]] <- gamma_calib(
-    age_min = 516.1,
-    age_max = 636.1,
-    shape = 1.2,
-    position = 0.99
-)
-
-calibrations[[24]] <- gamma_calib(
-    age_min = 461.1,
-    age_max = 636.1,
-    shape = 1,
-    position = 0.99
-)
-
-## Construct model
-model <- timescale_ml(
-    tree = tree,
-    tip_ages = tree$tip_ages,
-    calibrations = calibrations,
-    replace_zeros = TRUE
-)
-
-## Fit model
-fit <- fit_timescale_ml(model)
-
-## Plot dated tree
-plot(fit$tree)
-axisPhylo()
