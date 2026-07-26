@@ -1204,6 +1204,43 @@ get_contrast <- function(morph) {
     return(contrast)
 }
 
+#' Generate a uniform node calibration
+#'
+#' Constructs a uniform node calibration with a hard minimum and
+#' hard maximum age.
+#'
+#' @param age_min Hard minimum fossil calibration.
+#' @param age_max Hard maximum fossil calibration.
+#'
+#' @return An object of class `"timescale_calibration"`.
+#'
+#' @examples
+#' ## Uniform calibration between 457.5 Ma and 636.1 Ma.
+#'
+#' calib <- uniform_calib(
+#'     age_min = 457.5,
+#'     age_max = 636.1
+#' )
+#'
+#' plot(calib, xlim = c(400, 700))
+#'
+#' @export
+uniform_calib <- function(age_min,
+                          age_max) {
+    if (age_min >= age_max) {
+        stop("'age_min' must be less than 'age_max'.")
+    }
+
+    structure(
+        list(
+            distribution = "uniform",
+            age_min = age_min,
+            age_max = age_max
+        ),
+        class = "timescale_calibration"
+    )
+}
+
 #' Generate an exponential node calibration
 #'
 #' Constructs an exponential node calibration from a hard minimum and
