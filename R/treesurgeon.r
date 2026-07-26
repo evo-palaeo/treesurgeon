@@ -4463,3 +4463,714 @@ get_node_ages <- function(tree) {
 
     return(node_ages)
 }
+
+#' Construct a maximum-likelihood time-scaling model
+#'
+#' Constructs a model object for maximum-likelihood time-scaling of a phylogenetic tree using fossil tip ages and node age calibrations. The returned model can be passed to \code{fit_timescale_ml()} to estimate divergence times and branch-specific evolutionary rates.
+#'
+#' @param tree a phylogenetic tree of class \code{"phylo"} with branch lengths proportional to evolutionary change.
+#' @param tip_ages a numeric vector giving the ages of the tree tips. The vector should have length \code{Ntip(tree)} and be ordered to match \code{tree$tip.label}.
+#' @param calibrations a list of node age calibration distributions indexed by node number. Uncalibrated nodes should be assigned \code{NULL}.
+#' @param replace_zeros logical indicating whether zero-length branches should be replaced with a small positive value before fitting.
+#'
+#' @return An object of class \code{"timescale_ml"} containing the phylogeny, tip ages, calibrations and information required for maximum-likelihood optimisation.
+#'
+#' @examples
+#' tree <- KeatingDonoghueTree
+#'
+#' calibrations <- vector("list", Ntip(tree) + Nnode(tree))
+#'
+#' calibrations[[22]] <- gamma_calib(
+#'     age_min = 516.1,
+#'     age_max = 636.1,
+#'     shape = 1.2,
+#'     position = 0.99
+#' )
+#'
+#' calibrations[[24]] <- gamma_calib(
+#'     age_min = 461.1,
+#'     age_max = 636.1,
+#'     shape = 1,
+#'     position = 0.99
+#' )
+#'
+#' model <- timescale_ml(
+#'     tree = tree,
+#'     tip_ages = tree$tip_ages,
+#'     calibrations = calibrations,
+#'     replace_zeros = TRUE
+#' )
+#'
+#' fit <- fit_timescale_ml(model)
+#' plot(fit$tree)
+#' axisPhylo()
+#'
+#' @export
+
+###############################################################################
+## timescale_ml.R
+##
+## Maximum-likelihood time-scaling of phylogenetic trees
+##
+## Version: 1.1
+###############################################################################
+
+
+# ==============================================================================
+# Construct a timescale_ml model
+#
+# Validates the input tree and associated data, constructs lookup tables for the
+# tree topology, computes recursive minimum node ages and returns a model object
+# used throughout the optimisation.
+# ==============================================================================
+timescale_ml <- function(tree,
+                         tip_ages,
+                         calibrations,
+                         replace_zeros = TRUE) {
+    ## Validate tree
+
+    if (is.null(tree$edge.length)) {
+        stop("The tree must have branch lengths.")
+    }
+
+    if (any(tree$edge.length < 0)) {
+        stop("Negative branch lengths are not permitted.")
+    }
+
+    if (any(tree$edge.length == 0)) {
+        if (!replace_zeros) {
+            stop(
+                "The tree contains zero-length branches. ",
+                "These imply a branch-specific evolutionary rate of zero, ",
+                "which is incompatible with the lognormal rate model. ",
+                "Set replace_zeros = TRUE to replace zero-length branches ",
+                "with a small positive value."
+            )
+        }
+
+        tree_height <- max(ape::node.depth.edgelength(tree))
+        epsilon <- tree_height / 1000
+
+        n_zero <- sum(tree$edge.length == 0)
+
+        tree$edge.length[tree$edge.length == 0] <- epsilon
+
+        message(
+            "Replaced ", n_zero,
+            " zero-length branch",
+            if (n_zero != 1) "es" else "",
+            " with branch lengths of ", signif(epsilon, 3), "."
+        )
+    }
+
+    ## Validate tip ages
+
+    if (length(tip_ages) != ape::Ntip(tree)) {
+        stop("'tip_ages' must have length Ntip(tree).")
+    }
+
+    if (any(!is.finite(tip_ages))) {
+        stop("'tip_ages' must contain only finite values.")
+    }
+
+    ## Ensure postorder traversal
+
+    tree <- ape::reorder.phylo(tree, "postorder")
+
+    n_tip <- ape::Ntip(tree)
+    n_node <- ape::Nnode(tree)
+
+    ## Validate calibrations
+
+    if (!is.list(calibrations)) {
+        stop("'calibrations' must be a list.")
+    }
+
+    if (length(calibrations) > (n_tip + n_node)) {
+        stop(sprintf(
+            "'calibrations' must have length <= %d (= Ntip + Nnode).",
+            n_tip + n_node
+        ))
+    }
+
+    length(calibrations) <- n_tip + n_node
+
+    ## Calibrations may only be attached to internal nodes
+    for (i in which(!vapply(calibrations, is.null, logical(1)))) {
+        if (i <= n_tip) {
+            stop("Calibrations may only be specified for internal nodes.")
+        }
+    }
+
+    ## At least one calibration is required
+    if (!any(!vapply(calibrations, is.null, logical(1)))) {
+        stop(
+            "At least one node calibration must be supplied. ",
+            "Without calibrations, the absolute ages of internal nodes are ",
+            "not identifiable."
+        )
+    }
+
+    ## Parent-child relationships
+
+    parent <- tree$edge[, 1]
+    child <- tree$edge[, 2]
+
+    children <- split(child, parent)
+
+    parent_of <- integer(n_tip + n_node)
+    parent_of[child] <- parent
+
+    ## Root
+
+    root <- setdiff(parent, child)
+
+    stopifnot(length(root) == 1)
+
+    root <- root[[1]]
+
+    parent_of[root] <- NA_integer_
+
+    ## Internal node orderings
+
+    internal_nodes_postorder <- unique(parent)
+
+    preorder_tree <- ape::reorder.phylo(tree, "cladewise")
+
+    internal_nodes_preorder <- unique(preorder_tree$edge[, 1])
+
+    ## Build model
+
+    model <- list(
+        tree = tree,
+        n_tip = n_tip,
+        n_node = n_node,
+        parent = parent,
+        child = child,
+        children = children,
+        parent_of = parent_of,
+        root = root,
+        internal_nodes_postorder = internal_nodes_postorder,
+        internal_nodes_preorder = internal_nodes_preorder,
+        tip_ages = tip_ages,
+        calibrations = calibrations,
+        changes = tree$edge.length
+    )
+
+    ## Recursive minimum ages
+
+    model$minimum_ages <- compute_lower_bounds(model)
+
+    class(model) <- "timescale_ml"
+
+    model
+}
+
+# ==============================================================================
+# Compute recursive minimum node ages
+#
+# Computes the youngest permissible age for every node in the tree. For each
+# internal node, the minimum age is defined recursively as the maximum of
+# (i) its hard minimum calibration age (if present), and
+# (ii) the minimum ages of its immediate children. Tip minimum ages are simply
+# their fixed ages. The resulting minimum ages define the lower boundary of the
+# feasible parameter space used by the optimisation.
+# ==============================================================================
+compute_lower_bounds <- function(model) {
+    ## Initialise minimum ages
+
+    minimum_ages <- numeric(model$n_tip + model$n_node)
+
+    ## Tip ages are fixed
+
+    minimum_ages[seq_len(model$n_tip)] <- model$tip_ages
+
+    ## Process internal nodes in postorder (youngest → oldest)
+
+    for (node in model$internal_nodes_postorder) {
+        ## Youngest permissible age implied by descendants
+
+        child_minimum_ages <-
+            minimum_ages[
+                model$children[[as.character(node)]]
+            ]
+
+        ## Hard minimum from calibration (if present)
+
+        calib <- model$calibrations[[node]]
+
+        calib_min <- if (is.null(calib)) {
+            -Inf
+        } else {
+            calib$age_min
+        }
+
+        ## Youngest permissible age
+
+        minimum_ages[node] <-
+            max(
+                calib_min,
+                child_minimum_ages
+            )
+    }
+
+    ## Sanity check
+
+    if (any(is.na(minimum_ages))) {
+        stop("Failed to compute minimum node ages.")
+    }
+
+    minimum_ages
+}
+
+# ==============================================================================
+# Coordinate transformations
+# ==============================================================================
+
+## Numerically stable logistic functions
+
+logit <- function(x) {
+    if (any(x <= 0 | x >= 1)) {
+        stop("logit() requires values strictly between 0 and 1.")
+    }
+
+    log(x) - log1p(-x)
+}
+
+expit <- function(x) {
+    ifelse(x >= 0,
+        1 / (1 + exp(-x)),
+        exp(x) / (1 + exp(x))
+    )
+}
+
+# ==============================================================================
+# Transform optimisation parameters into node ages
+# ==============================================================================
+
+theta_to_node_ages <- function(theta, model) {
+    if (length(theta) != model$n_node) {
+        stop("Incorrect number of optimisation parameters.")
+    }
+
+    node_ages <- numeric(model$n_tip + model$n_node)
+
+    ## Fixed tip ages
+
+    node_ages[seq_len(model$n_tip)] <- model$tip_ages
+
+    ## Root age
+
+    root <- model$root
+
+    node_ages[root] <-
+        model$minimum_ages[root] +
+        exp(theta[1])
+
+    ## Remaining internal nodes
+
+    for (i in 2:model$n_node) {
+        node <- model$internal_nodes_preorder[i]
+
+        parent <- model$parent_of[node]
+
+        u <- expit(theta[i])
+
+        node_ages[node] <-
+            model$minimum_ages[node] +
+            u * (node_ages[parent] - model$minimum_ages[node])
+    }
+
+    node_ages
+}
+
+# ==============================================================================
+# Transform node ages into optimisation parameters
+# ==============================================================================
+
+node_ages_to_theta <- function(node_ages, model) {
+    theta <- numeric(model$n_node)
+
+    ## Root
+
+    root <- model$root
+
+    theta[1] <-
+        log(node_ages[root] -
+            model$minimum_ages[root])
+
+    ## Remaining internal nodes
+
+    for (i in 2:model$n_node) {
+        node <- model$internal_nodes_preorder[i]
+
+        parent <- model$parent_of[node]
+
+        u <-
+            (node_ages[node] - model$minimum_ages[node]) /
+                (node_ages[parent] - model$minimum_ages[node])
+        ####
+        if (u <= 0 || u >= 1) {
+            cat("\n")
+            cat("Node:", node, "\n")
+            cat("Parent:", parent, "\n")
+            cat("u =", format(u, digits = 20), "\n")
+            cat("node age =", format(node_ages[node], digits = 20), "\n")
+            cat("parent age =", format(node_ages[parent], digits = 20), "\n")
+            cat("minimum age =", format(model$minimum_ages[node], digits = 20), "\n")
+
+            stop("u outside (0,1)")
+        }
+        ####
+        theta[i] <- logit(u)
+    }
+
+    theta
+}
+
+# ==============================================================================
+# Generate initial node ages
+#
+# Generates a feasible starting set of node ages for optimisation. Tip ages are
+# fixed, whilst internal nodes are placed between their minimum permissible age
+# and the age of their parent. The resulting ages satisfy all topological and
+# calibration constraints and provide a valid starting point for optimisation.
+# ==============================================================================
+initial_node_ages <- function(model,
+                              alpha = 0.5) {
+    if (alpha <= 0 || alpha >= 1) {
+        stop("'alpha' must lie strictly between 0 and 1.")
+    }
+
+    ## Initialise node ages
+
+    node_ages <- numeric(model$n_tip + model$n_node)
+
+    ## Fixed tip ages
+
+    node_ages[seq_len(model$n_tip)] <- model$tip_ages
+
+    ## Root
+
+    root <- model$root
+
+    node_ages[root] <-
+        model$minimum_ages[root] + 1
+
+    ## Remaining internal nodes
+
+    if (model$n_node > 1) {
+        for (i in 2:model$n_node) {
+            node <- model$internal_nodes_preorder[i]
+
+            parent <- model$parent_of[node]
+
+            node_ages[node] <-
+                model$minimum_ages[node] +
+                alpha * (node_ages[parent] -
+                    model$minimum_ages[node])
+        }
+    }
+
+    node_ages
+}
+
+# ==============================================================================
+# Build optimisation state
+#
+# Constructs the complete optimisation state from a vector of optimisation
+# parameters. The parameter vector is first transformed into node ages, from
+# which branch durations, evolutionary rates and log-rates are calculated. The
+# returned state contains all quantities required for likelihood evaluation.
+# ==============================================================================
+
+build_state <- function(theta, model) {
+    ## Transform parameters to node ages
+
+    node_ages <- theta_to_node_ages(theta, model)
+
+    ## Branch durations
+
+    parent_age <- node_ages[model$parent]
+    child_age <- node_ages[model$child]
+
+    durations <- parent_age - child_age
+
+    ## Evolutionary rates
+
+    rates <- model$changes / durations
+
+    ## Log-rates
+
+    log_rates <- log(rates)
+
+    list(
+        node_ages = node_ages,
+        durations = durations,
+        rates = rates,
+        log_rates = log_rates
+    )
+}
+
+# ==============================================================================
+# Estimate lognormal rate parameters
+#
+# Estimates the mean and variance of log-rates by maximum likelihood. These
+# parameters define the lognormal distribution of evolutionary rates used by
+# the likelihood function.
+# ==============================================================================
+estimate_lognormal_parameters <- function(state) {
+    log_rates <- state$log_rates
+
+    mu <- mean(log_rates)
+
+    sigma2 <- mean((log_rates - mu)^2)
+
+    list(
+        mu = mu,
+        sigma2 = sigma2
+    )
+}
+
+
+# ==============================================================================
+# Log-likelihood under the lognormal rate model
+#
+# Computes the profile log-likelihood of the branch rates under a lognormal
+# model. The mean and variance of the log-rates are estimated by maximum
+# likelihood and substituted into the likelihood.
+# ==============================================================================
+logLik_lognormal_profile <- function(state) {
+    pars <- estimate_lognormal_parameters(state)
+
+    mu <- pars$mu
+    sigma2 <- pars$sigma2
+
+    log_rates <- state$log_rates
+
+    n <- length(log_rates)
+
+    logLik <-
+        -0.5 * n * log(2 * pi * sigma2) -
+        sum((log_rates - mu)^2) / (2 * sigma2)
+
+    logLik
+}
+
+# ==============================================================================
+# Calibration log-likelihood
+#
+# Computes the contribution of node-age calibrations to the overall
+# log-likelihood. Each calibration is evaluated independently according to its
+# specified probability distribution. Nodes without calibrations contribute
+# zero to the likelihood.
+# ==============================================================================
+logLik_calibrations <- function(state, model) {
+    logLik <- 0
+
+    for (node in model$internal_nodes_postorder) {
+        calib <- model$calibrations[[node]]
+
+        if (is.null(calib)) {
+            next
+        }
+
+        age <- state$node_ages[node]
+
+        logLik <- logLik + calibration_log_density(age, calib)
+    }
+
+    logLik
+}
+
+# ==============================================================================
+# Calibration log-density
+#
+# Evaluates the log-density of a single calibration distribution.
+# ==============================================================================
+calibration_log_density <- function(age, calibration) {
+    switch(calibration$distribution,
+        exponential = {
+            x <- age - calibration$age_min
+
+            out <- rep(-Inf, length(x))
+
+            keep <- x >= 0
+
+            out[keep] <- dexp(
+                x[keep],
+                rate = calibration$rate,
+                log = TRUE
+            )
+
+            out
+        },
+        gamma = {
+            x <- age - calibration$age_min
+
+            out <- rep(-Inf, length(x))
+
+            keep <- x >= 0
+
+            out[keep] <- dgamma(
+                x[keep],
+                shape = calibration$shape,
+                rate = calibration$rate,
+                log = TRUE
+            )
+
+            out
+        },
+        uniform = {
+            dunif(
+                age,
+                min = calibration$age_min,
+                max = calibration$age_max,
+                log = TRUE
+            )
+        },
+        stop(
+            sprintf(
+                "Unknown calibration distribution '%s'.",
+                calibration$distribution
+            )
+        )
+    )
+}
+
+# ==============================================================================
+# Objective function
+#
+# Computes the negative log-likelihood for a vector of optimisation parameters.
+# The parameter vector is transformed into a complete optimisation state, from
+# which the profile log-likelihood of the branch rates and the contribution of
+# any node-age calibrations are evaluated.
+# ==============================================================================
+objective <- function(theta, model) {
+    ## Build optimisation state
+
+    state <- build_state(theta, model)
+
+    ## Evaluate log-likelihood
+
+    logLik <-
+        logLik_lognormal_profile(state) +
+        logLik_calibrations(state, model)
+
+    ## Optimisers minimise
+
+    -logLik
+}
+
+
+# ==============================================================================
+# Fit a maximum-likelihood time-scaled tree
+#
+# Estimates node ages by maximising the likelihood of the observed branch
+# lengths under the specified rate model and node-age calibrations.
+# ==============================================================================
+fit_timescale_ml <- function(model,
+                             method = "BFGS",
+                             control = list()) {
+    ## Initial parameter values
+
+    node_ages0 <- initial_node_ages(model)
+
+    theta0 <- node_ages_to_theta(node_ages0, model)
+
+    ## Optimisation
+
+    fit <- optim(
+        par = theta0,
+        fn = objective,
+        model = model,
+        method = method,
+        control = control
+    )
+
+    ## Final state
+
+    state <- build_state(fit$par, model)
+
+    ## Time-scaled tree
+
+    tree <- build_time_tree(state, model)
+
+    ## Rate parameters
+
+    pars <- estimate_lognormal_parameters(state)
+
+    result <- list(
+        model = model,
+        tree = tree,
+        node_ages = state$node_ages,
+        durations = state$durations,
+        rates = state$rates,
+        theta = fit$par,
+        mu = pars$mu,
+        sigma2 = pars$sigma2,
+        logLik = -fit$value,
+        convergence = fit$convergence,
+        counts = fit$counts,
+        message = fit$message
+    )
+    result$tree$root.time <- result$node_ages[model$root]
+
+
+    class(result) <- "timescale_ml_fit"
+
+    result
+}
+
+
+# ==============================================================================
+# Construct the maximum-likelihood time-scaled tree
+#
+# Replaces the original branch lengths (amounts of evolutionary change) with
+# the inferred branch durations (time). The returned object is a standard
+# "phylo" object and can therefore be used with existing functions in ape,
+# phytools and related packages.
+# ==============================================================================
+
+build_time_tree <- function(state, model) {
+    tree <- model$tree
+
+    tree$edge.length <- state$durations
+
+    tree
+}
+
+## Load example tree
+tree <- KeatingDonoghueTree
+
+## Specify node calibrations
+calibrations <- vector("list", Ntip(tree) + Nnode(tree))
+
+calibrations[[22]] <- gamma_calib(
+    age_min = 516.1,
+    age_max = 636.1,
+    shape = 1.2,
+    position = 0.99
+)
+
+calibrations[[24]] <- gamma_calib(
+    age_min = 461.1,
+    age_max = 636.1,
+    shape = 1,
+    position = 0.99
+)
+
+## Construct model
+model <- timescale_ml(
+    tree = tree,
+    tip_ages = tree$tip_ages,
+    calibrations = calibrations,
+    replace_zeros = TRUE
+)
+
+## Fit model
+fit <- fit_timescale_ml(model)
+
+## Plot dated tree
+plot(fit$tree)
+axisPhylo()
