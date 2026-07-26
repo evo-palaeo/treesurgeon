@@ -1617,7 +1617,10 @@ plot.timescale_calibration <- function(x,
         to <- switch(x$distribution,
             exponential =
                 x$age_min +
-                    qexp(0.999, rate = x$rate),
+                    qexp(
+                        0.999,
+                        rate = x$rate
+                    ),
             gamma =
                 x$age_min +
                     qgamma(
@@ -1637,16 +1640,50 @@ plot.timescale_calibration <- function(x,
         )
     }
 
-    age <- seq(from, to, length.out = n)
+    if (x$distribution == "uniform") {
+        height <- 1 / (x$age_max - x$age_min)
 
-    plot(
-        age,
-        density(x, age),
-        type = "l",
-        xlab = "Age (Ma)",
-        ylab = "Density",
-        ...
-    )
+        plot(
+            c(from, to),
+            c(0, height),
+            type = "n",
+            xlab = "Age (Ma)",
+            ylab = "Density",
+            ...
+        )
+
+        segments(
+            x$age_min,
+            height,
+            x$age_max,
+            height
+        )
+
+        segments(
+            x$age_min,
+            0,
+            x$age_min,
+            height
+        )
+
+        segments(
+            x$age_max,
+            height,
+            x$age_max,
+            0
+        )
+    } else {
+        age <- seq(from, to, length.out = n)
+
+        plot(
+            age,
+            density(x, age),
+            type = "l",
+            xlab = "Age (Ma)",
+            ylab = "Density",
+            ...
+        )
+    }
 
     abline(v = x$age_min, lty = 2)
     abline(v = x$age_max, lty = 3)
