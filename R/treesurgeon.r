@@ -1528,6 +1528,71 @@ density.timescale_calibration <- function(x,
     density
 }
 
+#' Format a node calibration for MrBayes
+#'
+#' Converts a node calibration to the corresponding MrBayes
+#' calibration distribution.
+#'
+#' @param x An object.
+#' @param ... Further arguments passed to or from other methods.
+#'
+#' @return A character string containing the corresponding MrBayes
+#' calibration distribution.
+#'
+#' @examples
+#' calib <- gamma_calib(
+#'     age_min = 457.5,
+#'     age_max = 636.1,
+#'     shape = 2
+#' )
+#'
+#' format_mrbayes(calib)
+#'
+#' calib <- exp_calib(
+#'     age_min = 457.5,
+#'     age_max = 636.1
+#' )
+#'
+#' format_mrbayes(calib)
+#'
+#' calib <- uniform_calib(
+#'     age_min = 457.5,
+#'     age_max = 636.1
+#' )
+#'
+#' format_mrbayes(calib)
+#' @export
+
+format_mrbayes <- function(x, ...) {
+    UseMethod("format_mrbayes")
+}
+
+#' @export
+format_mrbayes.timescale_calibration <- function(x, ...) {
+    switch(x$distribution,
+        exponential =
+            sprintf(
+                "offsetexponential(%g,%g)",
+                x$age_min,
+                x$rate
+            ),
+        gamma =
+            sprintf(
+                "offsetgamma(%g,%g,%g)",
+                x$age_min,
+                x$shape,
+                x$rate
+            ),
+        uniform =
+            sprintf(
+                "uniform(%g,%g)",
+                x$age_min,
+                x$age_max
+            )
+    )
+}
+
+
 #' Plot a node calibration
 #'
 #' Plots the probability density of a node calibration.
