@@ -5347,12 +5347,17 @@ objective <- function(theta, model) {
 }
 
 
-# ==============================================================================
-# Fit a maximum-likelihood time-scaled tree
-#
-# Estimates node ages by maximising the likelihood of the observed branch
-# lengths under the specified rate model and node-age calibrations.
-# ==============================================================================
+#' Fit a maximum-likelihood time-scaling model
+#'
+#' Estimates divergence times under the specified rate model.
+#'
+#' @param model A \code{"timescale_ml"} object.
+#' @param method Optimisation method passed to \code{\link[stats]{optim}}.
+#' @param control A list of control arguments passed to \code{\link[stats]{optim}}.
+#'
+#' @return An object of class \code{"timescale_ml_fit"}.
+#'
+#' @export
 fit_timescale_ml <- function(model,
                              method = "BFGS",
                              control = list()) {
