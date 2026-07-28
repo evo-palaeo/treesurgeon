@@ -4478,6 +4478,96 @@ get_node_ages <- function(tree) {
 #' @details
 #' This function estimates divergence times by maximum likelihood from a phylogenetic tree whose branch lengths represent accumulated evolutionary change (e.g. numbers of substitutions or morphological character-state changes), together with one or more calibrations constraining the ages of internal nodes. Divergence times are estimated under an explicit statistical model of evolutionary rate variation across branches.
 #'
+#' #' \strong{Rationale}
+#'
+#' The motivation for this function is the lack of a rapid, statistically
+#' principled, and generally applicable method for \emph{a posteriori}
+#' time-scaling of phylogenetic trees for downstream analyses such as ancestral
+#' state estimation, diversification analyses, and comparative methods.
+#' Existing approaches broadly fall into three categories.
+#'
+#' \strong{Deterministic time redistribution}
+#'
+#' Deterministic methods redistribute time across a tree without reference to an
+#' explicit statistical model. A widely used example is the \code{"equal"}
+#' method implemented in \code{paleotree::timePaleoPhy()}.
+#'
+#' Under this approach:
+#' \itemize{
+#' \item Internal nodes are initially assigned the age of their oldest descendant.
+#' \item The root age is increased by a user-specified amount.
+#' \item The additional time is propagated outward from the root and divided equally among descendant branches at each branching event.
+#' \item Branches are processed in order of increasing topological distance from the root, with shallower branches updated before deeper branches.
+#' }
+#'
+#' Advantages:
+#' \itemize{
+#' \item Extremely fast.
+#' \item Simple to understand and implement.
+#' }
+#'
+#' Limitations:
+#' \itemize{
+#' \item Branch lengths are determined solely by the redistribution algorithm.
+#' \item The observed amount of evolutionary change along each branch is ignored.
+#' \item Branch lengths are not inferred under an explicit statistical model.
+#' \item Numerous very short branches may be produced that are difficult to justify biologically.
+#' }
+#'
+#' \strong{Fossil preservation models}
+#'
+#' Fossil preservation methods estimate divergence times from models of
+#' branching, extinction and fossil sampling. A representative example is
+#' \code{paleotree::cal3TimePaleoPhy()}.
+#'
+#' Advantages:
+#' \itemize{
+#' \item Branch durations represent estimates of unsampled evolutionary history.
+#' \item Divergence times are inferred under an explicit probabilistic model.
+#' \item Computationally efficient.
+#' }
+#'
+#' Limitations:
+#' \itemize{
+#' \item The observed amount of evolutionary change along each branch is not incorporated into the dating procedure.
+#' \item Reliable estimates of branching, extinction and sampling rates are often unavailable unless the fossil record of the study group is exceptionally well characterised.
+#' }
+#'
+#' \strong{Bayesian divergence-time estimation}
+#'
+#' Bayesian methods estimate topology, divergence times and model parameters
+#' simultaneously from the character data under explicit models of character
+#' evolution, tree diversification and clock variation. Alternatively, the
+#' topology may be fixed, allowing \emph{a posteriori} estimation of divergence
+#' times within the same probabilistic framework.
+#'
+#' Advantages:
+#' \itemize{
+#' \item Integrates all available sources of information within a coherent statistical framework.
+#' \item Represents the current state of the art for divergence-time estimation.
+#' }
+#'
+#' Limitations:
+#' \itemize{
+#' \item Computationally intensive.
+#' \item Analyses may require many hours, days or even months to complete.
+#' \item Often requires high-performance computing resources.
+#' \item The computational cost is unnecessary for many downstream analyses.
+#' }
+#'
+#' \strong{The present method}
+#'
+#' The method implemented here is intended to bridge the gap between these
+#' approaches.
+#'
+#' \itemize{
+#' \item Like Bayesian relaxed-clock methods, it combines observed evolutionary change with external calibrations to estimate divergence times under an explicit statistical model of evolutionary rate variation.
+#' \item Unlike Bayesian methods, node ages are estimated by maximum likelihood rather than Markov chain Monte Carlo, allowing rapid optimisation using standard numerical methods.
+#' \item Compared with deterministic redistribution methods, branch lengths are inferred from the observed evolutionary change rather than being assigned algorithmically.
+#' \item Compared with fossil preservation models, no estimates of branching, extinction or fossil sampling rates are required.
+#' \item The result is a computationally efficient method that produces biologically interpretable branch durations suitable for downstream comparative analyses.
+#' }
+#'
 #' \strong{Model}
 #'
 #' The topology and observed branch lengths of the input tree are treated as fixed throughout the optimisation. Only the ages of the internal nodes are estimated.
