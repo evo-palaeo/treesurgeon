@@ -4480,27 +4480,13 @@ get_node_ages <- function(tree) {
 #'
 #' \strong{Rationale}
 #'
-#' The motivation for this function is the lack of a rapid, statistically
-#' principled, and generally applicable method for \emph{a posteriori}
-#' time-scaling of phylogenetic trees for downstream analyses such as ancestral
-#' state estimation, diversification analyses and comparative methods.
-#' Existing approaches broadly fall into three categories.
+#' This function was developed to address the lack of a fast, statistically principled, and generally applicable method for \emph{a posteriori} time-scaling of phylogenetic trees, for use in downstream analyses such as ancestral state estimation, diversification analyses and comparative methods. Existing approaches broadly fall into three categories, summarised below alongside the method implemented here.
 #'
 #' \strong{1. Deterministic time redistribution}
 #'
-#' Description:
+#' Deterministic methods redistribute time across a tree without reference to an explicit statistical model. A widely used example is the \code{"equal"} method implemented in \code{paleotree::timePaleoPhy()}.
 #'
-#' Deterministic methods redistribute time across a tree without reference to an
-#' explicit statistical model. A widely used example is the \code{"equal"}
-#' method implemented in \code{paleotree::timePaleoPhy()}.
-#'
-#' Under this approach:
-#' \itemize{
-#' \item Internal nodes are initially assigned the age of their oldest descendant.
-#' \item The root age is increased by a user-specified amount.
-#' \item The additional time is propagated outward from the root and divided equally among descendant branches at each branching event.
-#' \item Branches are processed in order of increasing topological distance from the root, with shallower branches updated before deeper branches.
-#' }
+#' Under this approach, internal nodes are initially assigned the age of their oldest descendant, and the root age is then increased by a user-specified amount. This additional time is propagated outward from the root and divided equally among descendant branches at each branching event, with branches processed in order of increasing topological distance from the root — shallower branches are updated before deeper ones.
 #'
 #' Advantages:
 #' \itemize{
@@ -4519,11 +4505,7 @@ get_node_ages <- function(tree) {
 #'
 #' \strong{2. Fossil preservation models}
 #'
-#' Description:
-#'
-#' Fossil preservation methods estimate divergence times using probabilistic
-#' models of branching, extinction and fossil sampling. A representative
-#' example is \code{paleotree::cal3TimePaleoPhy()}.
+#' Fossil preservation methods estimate divergence times using probabilistic models of branching, extinction and fossil sampling. A representative example is \code{paleotree::cal3TimePaleoPhy()}.
 #'
 #' Advantages:
 #' \itemize{
@@ -4540,13 +4522,7 @@ get_node_ages <- function(tree) {
 #'
 #' \strong{3. Bayesian divergence-time estimation}
 #'
-#' Description:
-#'
-#' Bayesian methods estimate topology, divergence times and model parameters
-#' jointly from the character data under explicit models of character evolution,
-#' tree diversification and clock variation. Alternatively, the topology may be
-#' fixed, allowing \emph{a posteriori} estimation of divergence times within the
-#' same probabilistic framework.
+#' Bayesian methods estimate topology, divergence times and model parameters jointly from the character data, under explicit models of character evolution, tree diversification and clock variation. Alternatively, the topology may be fixed, allowing \emph{a posteriori} estimation of divergence times within the same probabilistic framework.
 #'
 #' Advantages:
 #' \itemize{
@@ -4560,18 +4536,12 @@ get_node_ages <- function(tree) {
 #' \item Computationally intensive.
 #' \item Analyses may require many hours, days or even months to complete.
 #' \item Often requires high-performance computing resources.
-#' \item Computational cost may be unnecessary for many downstream analyses.
+#' \item This computational cost may be unnecessary for many downstream analyses.
 #' }
 #'
 #' \strong{4. The present method}
 #'
-#' Description:
-#'
-#' The method implemented here is intended to bridge the gap between
-#' deterministic redistribution methods and Bayesian divergence-time
-#' estimation. It combines observed evolutionary change with external
-#' calibrations to estimate divergence times under an explicit statistical
-#' model of evolutionary rate variation.
+#' The method implemented here is intended to bridge the gap between deterministic redistribution methods and Bayesian divergence-time estimation. It combines the observed amount of evolutionary change with external calibrations to estimate divergence times under an explicit statistical model of evolutionary rate variation.
 #'
 #' Advantages:
 #' \itemize{
@@ -4590,7 +4560,7 @@ get_node_ages <- function(tree) {
 #'
 #' \strong{Model}
 #'
-#' The topology and observed branch lengths of the input tree are treated as fixed throughout the optimisation. Only the ages of the internal nodes are estimated.
+#' The topology and the observed amount of evolutionary change on each branch of the input tree are treated as fixed throughout the optimisation. Only the ages of the internal nodes are estimated.
 #'
 #' The method assumes that the observed evolutionary change along each branch is the product of the branch duration and the branch-specific evolutionary rate:
 #'
@@ -4598,14 +4568,14 @@ get_node_ages <- function(tree) {
 #' \mathrm{change}_i = \mathrm{rate}_i \times \mathrm{duration}_i
 #' }
 #'
-#' The amount of evolutionary change is fixed by the input tree. Branch durations are determined by the unknown node ages, and branch-specific evolutionary rates are therefore implied by:
+#' The amount of evolutionary change on each branch is fixed by the input tree. Branch durations are determined by the unknown node ages, and branch-specific evolutionary rates are therefore implied by:
 #'
 #' \deqn{
 #' \mathrm{rate}_i =
 #' \frac{\mathrm{change}_i}{\mathrm{duration}_i}
 #' }
 #'
-#' Because only the product of evolutionary rate and branch duration is observed, these quantities cannot be estimated independently. This identifiability problem is resolved by combining:
+#' Because only the product of evolutionary rate and branch duration is observed, these two quantities cannot be estimated independently. This identifiability problem is resolved by combining two sources of information:
 #'
 #' \itemize{
 #' \item External calibration information, which constrains the absolute ages of selected nodes.
@@ -4616,11 +4586,9 @@ get_node_ages <- function(tree) {
 #'
 #' \strong{Optimisation parameters}
 #'
-#' The optimisation is performed over a vector of unconstrained parameters, \code{theta}, containing one parameter for each internal node.
+#' The optimisation is performed over a vector of unconstrained parameters, \code{theta}, containing one parameter for each internal node. These parameters are \emph{not} the node ages themselves. Instead, they provide an unconstrained parameterisation that guarantees every candidate solution satisfies the temporal constraints imposed by the tree topology and any calibration minima.
 #'
-#' These parameters are \emph{not} the node ages themselves. Instead, they provide an unconstrained parameterisation that guarantees every candidate solution satisfies the temporal constraints imposed by the tree topology and any calibration minima.
-#'
-#' Direct optimisation of node ages is difficult because every node must:
+#' Direct optimisation of node ages is difficult because every node must simultaneously:
 #'
 #' \itemize{
 #' \item Be older than all of its descendants.
@@ -4628,9 +4596,9 @@ get_node_ages <- function(tree) {
 #' \item Satisfy any specified minimum calibration age.
 #' }
 #'
-#' Standard optimisation routines such as \code{optim()} are designed for unconstrained optimisation and do not naturally enforce these relationships. To avoid constrained optimisation, unconstrained parameters are transformed into valid node ages.
+#' Standard optimisation routines such as \code{optim()} are designed for unconstrained optimisation and do not naturally enforce these relationships. To avoid the need for constrained optimisation, unconstrained parameters are instead transformed into valid node ages.
 #'
-#' The root node is parameterised as:
+#' The root node has no parent to bound its age from above, and so is parameterised separately from all other nodes:
 #'
 #' \deqn{
 #' \mathrm{age}_{\mathrm{root}}
@@ -4640,7 +4608,7 @@ get_node_ages <- function(tree) {
 #' \exp(\theta_1)
 #' }
 #'
-#' ensuring that the inferred root age is always older than its minimum permissible age.
+#' Since \eqn{\exp(\theta_1)} is always positive, this guarantees that the inferred root age is always older than its minimum permissible age, with no upper limit imposed.
 #'
 #' All remaining internal nodes are parameterised relative to their parent. Each parameter is mapped onto the interval \eqn{(0,1)} using the logistic transformation:
 #'
@@ -4664,20 +4632,13 @@ get_node_ages <- function(tree) {
 #' \right)
 #' }
 #'
-#' where \eqn{\mathrm{minimum\_age}_i} is the oldest age permitted by the ages of descendant nodes and any minimum calibration.
+#' where \eqn{\mathrm{minimum\_age}_i} is the oldest age permitted by the ages of descendant nodes and any minimum calibration, and \eqn{\mathrm{parent\_age}} is the age of the node's immediate ancestor, calculated earlier in the same traversal.
 #'
-#' Consequently, every possible value of \code{theta} corresponds to a valid time tree, allowing standard unconstrained optimisation algorithms to be used efficiently.
+#' Because \eqn{u_i} is always strictly between 0 and 1, every node age is guaranteed to fall strictly between its minimum permissible age and its parent's age. As a result, every possible value of \code{theta} corresponds to a valid time tree, allowing standard unconstrained optimisation algorithms to be used efficiently, without rejecting or correcting invalid candidate solutions.
 #'
 #' \strong{Rate model}
 #'
-#' Once a candidate set of node ages has been proposed:
-#'
-#' \itemize{
-#' \item Branch durations are determined immediately from the node ages.
-#' \item Branch-specific evolutionary rates are then calculated by dividing the observed evolutionary change by the inferred branch duration.
-#' }
-#'
-#' Branch rates are therefore not optimisation parameters in their own right; they are implied by the proposed node ages.
+#' Once a candidate set of node ages has been proposed, branch durations are determined immediately, and branch-specific evolutionary rates follow by dividing the observed evolutionary change by the inferred branch duration. Branch rates are therefore not optimisation parameters in their own right; they are entirely implied by the proposed node ages.
 #'
 #' The current implementation assumes that the logarithm of the branch rates follows a normal distribution:
 #'
@@ -4687,21 +4648,21 @@ get_node_ages <- function(tree) {
 #' N(\mu,\sigma^2)
 #' }
 #'
-#' The parameters \eqn{\mu} and \eqn{\sigma^2} describe the mean and variance of the log-rate distribution. Rather than being optimised numerically, they are estimated analytically at every likelihood evaluation using the closed-form maximum likelihood estimators for a normal distribution.
+#' The parameters \eqn{\mu} and \eqn{\sigma^2} describe the mean and variance of this log-rate distribution. Rather than being optimised numerically alongside the node ages, they are estimated analytically at every likelihood evaluation, using the closed-form maximum likelihood estimators for the mean and variance of a normal distribution.
 #'
 #' The optimisation therefore uses a profile likelihood:
 #'
 #' \itemize{
-#' \item The optimiser searches only over the node-age parameter vector.
-#' \item At each likelihood evaluation, the corresponding branch rates are calculated.
-#' \item The maximum likelihood estimates of \eqn{\mu} and \eqn{\sigma^2} are substituted directly into the likelihood.
+#' \item The optimiser searches only over the node-age parameter vector, \code{theta}.
+#' \item At each likelihood evaluation, the branch rates implied by the current node ages are calculated.
+#' \item The maximum likelihood estimates of \eqn{\mu} and \eqn{\sigma^2} for those rates are substituted directly into the likelihood.
 #' }
 #'
-#' This reduces the optimisation from \eqn{n_{\mathrm{node}}+2} parameters to \eqn{n_{\mathrm{node}}} parameters without approximation.
+#' This reduces the optimisation from \eqn{n_{\mathrm{node}}+2} parameters to \eqn{n_{\mathrm{node}}} parameters, without approximation, since the normal MLEs used are exact.
 #'
 #' \strong{Likelihood}
 #'
-#' The objective function is the sum of independent rate and calibration likelihoods:
+#' The objective function is the sum of two independent components: a rate likelihood and a calibration likelihood.
 #'
 #' \deqn{
 #' \log L
@@ -4724,7 +4685,7 @@ get_node_ages <- function(tree) {
 #' (\mathrm{rate}_i;\mu,\sigma^2)
 #' }
 #'
-#' Node ages implying branch rates consistent with a common lognormal distribution receive higher likelihood than those requiring unusually heterogeneous or extreme rates.
+#' Node ages that imply branch rates consistent with a single, common lognormal distribution receive a higher likelihood than those that require unusually heterogeneous or extreme rates on particular branches.
 #'
 #' \emph{Calibration likelihood}
 #'
@@ -4740,24 +4701,32 @@ get_node_ages <- function(tree) {
 #'
 #' where \eqn{f_j} is the calibration density assigned to node \eqn{j} (currently uniform, exponential or gamma).
 #'
-#' The calibration likelihood provides the information required to estimate the absolute timescale. Without calibration information, the rate likelihood alone is insensitive to the absolute scale of the tree and therefore only informs the relative pattern of rate variation.
+#' The calibration likelihood supplies the information needed to estimate the absolute timescale of the tree. Without it, the rate likelihood alone is insensitive to the absolute scale of the tree: rescaling every branch duration by a constant factor rescales every branch rate by the reciprocal constant, which shifts the mean log-rate, \eqn{\mu}, but leaves the variance, \eqn{\sigma^2}, unchanged. Since \eqn{\mu} is profiled out of the likelihood, this shift has no effect on \eqn{\log L_{\mathrm{rates}}}. The rate likelihood therefore only informs the \emph{relative} pattern of rate variation across the tree, while at least one calibration is required to anchor the tree to an absolute timescale.
 #'
 #' \strong{Current implementation and future extensions}
 #'
-#' The inferred time tree maximises the combined rate and calibration likelihoods and therefore represents the compromise between the calibration evidence and the assumed model of evolutionary rate variation.
+#' The inferred time tree maximises the combined rate and calibration likelihoods and therefore represents the maximum-likelihood estimate under the assumed model of evolutionary rate variation and the specified calibrations.
 #'
-#' Unlike classical penalised-likelihood dating methods, the preference for smooth rate variation does not arise from an arbitrary smoothing parameter. Instead, it follows directly from an explicit probabilistic model of branch rates, with the degree of rate variation estimated from the data by maximum likelihood.
+#' Unlike classical penalised-likelihood dating methods, the preference for smooth rate variation here does not arise from an arbitrary smoothing parameter. Instead, it follows directly from an explicit probabilistic model of branch rates, with the degree of rate variation estimated from the data by maximum likelihood.
 #'
-#' The current implementation uses an uncorrelated lognormal relaxed-clock model, in which branch-specific evolutionary rates are assumed to vary independently among branches.
+#' \strong{Current implementation}
+#'
+#' The inferred time tree maximises the combined rate and calibration likelihoods, and so represents a compromise between the calibration evidence and the assumed model of evolutionary rate variation.
+#'
+#' Unlike classical penalised-likelihood dating methods, the preference for smooth rate variation here does not arise from an arbitrary smoothing parameter. Instead, it follows directly from an explicit probabilistic model of branch rates, with the degree of rate variation estimated from the data by maximum likelihood.
+#'
+#' The current implementation assumes an uncorrelated lognormal relaxed-clock model, in which branch-specific evolutionary rates are assumed to vary independently among branches.
+#'
+#' \strong{Future extensions}
 #'
 #' The framework has been designed to accommodate alternative models of rate variation. Planned extensions include:
 #'
 #' \itemize{
-#' \item An autocorrelated relaxed-clock model, in which neighbouring branches are expected to have similar evolutionary rates because rates evolve gradually through the tree.
-#' \item A strict-clock model, in which all branches are constrained to share a common evolutionary rate.
+#' \item An autocorrelated relaxed-clock model, in which neighbouring branches are expected to have similar evolutionary rates, because rates evolve gradually through the tree rather than independently on each branch.
+#' \item A strict-clock model, in which all branches are constrained to share a single common evolutionary rate.
 #' }
 #'
-#' These alternative models represent different biological hypotheses about how evolutionary rates evolve while retaining the same maximum-likelihood framework for estimating divergence times and comparing competing models of rate evolution.
+#' These alternative models represent different biological hypotheses about how evolutionary rates evolve, while retaining the same maximum-likelihood framework for estimating divergence times and for comparing competing models of rate evolution.
 #'
 #' @examples
 #' tree <- KeatingDonoghueTree
