@@ -257,7 +257,7 @@ Unlike classical penalised-likelihood dating methods, the preference for smooth 
 
 \strong{Current implementation}
 
-The inferred time tree maximises the combined rate and calibration likelihoods, and so represents a compromise between the calibration evidence and the assumed model of evolutionary rate variation.
+The inferred time tree maximises the combined rate and calibration likelihoods and therefore represents the maximum-likelihood estimate under the assumed model of evolutionary rate variation and the specified calibrations.
 
 Unlike classical penalised-likelihood dating methods, the preference for smooth rate variation here does not arise from an arbitrary smoothing parameter. Instead, it follows directly from an explicit probabilistic model of branch rates, with the degree of rate variation estimated from the data by maximum likelihood.
 
