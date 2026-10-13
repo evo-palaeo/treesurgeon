@@ -4464,6 +4464,7 @@ get_node_ages <- function(tree) {
     return(node_ages)
 }
 
+
 #' Construct a maximum-likelihood time-scaling model
 #'
 #' Constructs a model object for maximum-likelihood time-scaling of a phylogenetic tree using fossil tip ages and node age calibrations. The returned model can be passed to \code{fit_timescale_ml()} to estimate divergence times and branch-specific evolutionary rates.
@@ -4472,6 +4473,8 @@ get_node_ages <- function(tree) {
 #' @param tip_ages a numeric vector giving the ages of the tree tips. The vector should have length \code{Ntip(tree)} and be ordered to match \code{tree$tip.label}.
 #' @param calibrations a list of node age calibration distributions indexed by node number. Uncalibrated nodes should be assigned \code{NULL}.
 #' @param replace_zeros logical indicating whether zero-length branches should be replaced with a small positive value before fitting.
+#' @param sigma_min positive minimum standard deviation for log-rates. The profiled log-rate variance is constrained to be at least `sigma_min^2`, preventing variance collapse.
+#' @param root_max_age optional finite upper bound on the root age, in the same time units and age coordinate as `tip_ages` and the calibrations. The default `NULL` leaves the root unbounded above.
 #'
 #' @return An object of class \code{"timescale_ml"} containing the phylogeny, tip ages, calibrations and information required for maximum-likelihood optimisation.
 #'
@@ -4598,17 +4601,7 @@ get_node_ages <- function(tree) {
 #'
 #' Standard optimisation routines such as \code{optim()} are designed for unconstrained optimisation and do not naturally enforce these relationships. To avoid the need for constrained optimisation, unconstrained parameters are instead transformed into valid node ages.
 #'
-#' The root node has no parent to bound its age from above, and so is parameterised separately from all other nodes:
-#'
-#' \deqn{
-#' \mathrm{age}_{\mathrm{root}}
-#' =
-#' \mathrm{minimum\_root\_age}
-#' +
-#' \exp(\theta_1)
-#' }
-#'
-#' Since \eqn{\exp(\theta_1)} is always positive, this guarantees that the inferred root age is always older than its minimum permissible age, with no upper limit imposed.
+#' The root node has no parent to bound its age from above, and so is parameterised separately from all other nodes. By default, its age is the minimum permissible root age plus \eqn{\exp(\theta_1)}, leaving it unbounded above. If `root_max_age` is supplied, a logistic transformation instead constrains the root age to the interval between its minimum permissible age and the specified maximum. The maximum must exceed the minimum permissible root age.
 #'
 #' All remaining internal nodes are parameterised relative to their parent. Each parameter is mapped onto the interval \eqn{(0,1)} using the logistic transformation:
 #'
@@ -4639,6 +4632,8 @@ get_node_ages <- function(tree) {
 #' \strong{Rate model}
 #'
 #' Once a candidate set of node ages has been proposed, branch durations are determined immediately, and branch-specific evolutionary rates follow by dividing the observed evolutionary change by the inferred branch duration. Branch rates are therefore not optimisation parameters in their own right; they are entirely implied by the proposed node ages.
+#'
+#' If `sigma_min` is supplied, the standard deviation of log-rates is constrained to be at least this value. This prevents the profiled likelihood from diverging when the implied branch rates become identical. The fit reports both the unconstrained variance estimate (`sigma2_mle`) and the variance used in the likelihood (`sigma2`), and flags when the constraint is active. Because this is a substantive constraint on rate heterogeneity, users should assess sensitivity to plausible values; no universal value is assumed by default.
 #'
 #' The current implementation assumes that the logarithm of the branch rates follows a normal distribution:
 #'
@@ -4765,7 +4760,7 @@ get_node_ages <- function(tree) {
 ##
 ## Maximum-likelihood time-scaling of phylogenetic trees
 ##
-## Version: 1.1
+## Version: 1.2
 ###############################################################################
 
 
@@ -4779,7 +4774,9 @@ get_node_ages <- function(tree) {
 timescale_ml <- function(tree,
                          tip_ages,
                          calibrations,
-                         replace_zeros = TRUE) {
+                         replace_zeros = TRUE,
+                         sigma_min = 0.01,
+                         root_max_age = NULL) {
     ## Validate tree
 
     if (is.null(tree$edge.length)) {
@@ -4824,6 +4821,20 @@ timescale_ml <- function(tree,
 
     if (any(!is.finite(tip_ages))) {
         stop("'tip_ages' must contain only finite values.")
+    }
+
+    ## Validate optional constraints
+
+    if (!is.null(sigma_min)) {
+        if (length(sigma_min) != 1L || !is.finite(sigma_min) || sigma_min <= 0) {
+            stop("'sigma_min' must be NULL or a single finite positive number.")
+        }
+    }
+
+    if (!is.null(root_max_age)) {
+        if (length(root_max_age) != 1L || !is.finite(root_max_age)) {
+            stop("'root_max_age' must be NULL or a single finite number.")
+        }
     }
 
     ## Ensure postorder traversal
@@ -4907,12 +4918,22 @@ timescale_ml <- function(tree,
         internal_nodes_preorder = internal_nodes_preorder,
         tip_ages = tip_ages,
         calibrations = calibrations,
-        changes = tree$edge.length
+        changes = tree$edge.length,
+        sigma_min = sigma_min,
+        root_max_age = root_max_age
     )
 
     ## Recursive minimum ages
 
     model$minimum_ages <- compute_lower_bounds(model)
+
+    if (!is.null(model$root_max_age) &&
+        model$root_max_age <= model$minimum_ages[model$root]) {
+        stop(
+            "'root_max_age' must be greater than the minimum permissible root age (",
+            signif(model$minimum_ages[model$root], 6), ")."
+        )
+    }
 
     class(model) <- "timescale_ml"
 
@@ -5016,9 +5037,16 @@ theta_to_node_ages <- function(theta, model) {
 
     root <- model$root
 
-    node_ages[root] <-
-        model$minimum_ages[root] +
-        exp(theta[1])
+    if (is.null(model$root_max_age)) {
+        node_ages[root] <-
+            model$minimum_ages[root] +
+            exp(theta[1])
+    } else {
+        node_ages[root] <-
+            model$minimum_ages[root] +
+            expit(theta[1]) *
+                (model$root_max_age - model$minimum_ages[root])
+    }
 
     ## Remaining internal nodes
 
@@ -5048,9 +5076,16 @@ node_ages_to_theta <- function(node_ages, model) {
 
     root <- model$root
 
-    theta[1] <-
-        log(node_ages[root] -
-            model$minimum_ages[root])
+    if (is.null(model$root_max_age)) {
+        theta[1] <- log(
+            node_ages[root] - model$minimum_ages[root]
+        )
+    } else {
+        root_fraction <-
+            (node_ages[root] - model$minimum_ages[root]) /
+                (model$root_max_age - model$minimum_ages[root])
+        theta[1] <- logit(root_fraction)
+    }
 
     ## Remaining internal nodes
 
@@ -5107,8 +5142,13 @@ initial_node_ages <- function(model,
 
     root <- model$root
 
-    node_ages[root] <-
-        model$minimum_ages[root] + 1
+    if (is.null(model$root_max_age)) {
+        node_ages[root] <- model$minimum_ages[root] + 1
+    } else {
+        node_ages[root] <- (
+            model$minimum_ages[root] + model$root_max_age
+        ) / 2
+    }
 
     ## Remaining internal nodes
 
@@ -5172,19 +5212,26 @@ build_state <- function(theta, model) {
 # parameters define the lognormal distribution of evolutionary rates used by
 # the likelihood function.
 # ==============================================================================
-estimate_lognormal_parameters <- function(state) {
+estimate_lognormal_parameters <- function(state, sigma_min = NULL) {
     log_rates <- state$log_rates
 
     mu <- mean(log_rates)
+    sigma2_mle <- mean((log_rates - mu)^2)
 
-    sigma2 <- mean((log_rates - mu)^2)
+    ## Constrained MLE under sigma >= sigma_min, if a floor was requested.
+    sigma2 <- if (is.null(sigma_min)) {
+        sigma2_mle
+    } else {
+        max(sigma2_mle, sigma_min^2)
+    }
 
     list(
         mu = mu,
-        sigma2 = sigma2
+        sigma2_mle = sigma2_mle,
+        sigma2 = sigma2,
+        floor_active = !is.null(sigma_min) && sigma2_mle < sigma_min^2
     )
 }
-
 
 # ==============================================================================
 # Log-likelihood under the lognormal rate model
@@ -5193,21 +5240,19 @@ estimate_lognormal_parameters <- function(state) {
 # model. The mean and variance of the log-rates are estimated by maximum
 # likelihood and substituted into the likelihood.
 # ==============================================================================
-logLik_lognormal_profile <- function(state) {
-    pars <- estimate_lognormal_parameters(state)
+logLik_lognormal_profile <- function(state, sigma_min = NULL) {
+    pars <- estimate_lognormal_parameters(state, sigma_min = sigma_min)
 
     mu <- pars$mu
     sigma2 <- pars$sigma2
-
     log_rates <- state$log_rates
-
     n <- length(log_rates)
 
-    logLik <-
-        -0.5 * n * log(2 * pi * sigma2) -
+    ## Evaluate the normal log-likelihood at the unconstrained mean and the
+    ## (possibly constrained) variance. Do not use the simplified profile
+    ## formula when the variance floor is active.
+    -0.5 * n * log(2 * pi * sigma2) -
         sum((log_rates - mu)^2) / (2 * sigma2)
-
-    logLik
 }
 
 # ==============================================================================
@@ -5307,7 +5352,7 @@ objective <- function(theta, model) {
     ## Evaluate log-likelihood
 
     logLik <-
-        logLik_lognormal_profile(state) +
+        logLik_lognormal_profile(state, sigma_min = model$sigma_min) +
         logLik_calibrations(state, model)
 
     ## Optimisers minimise
@@ -5356,7 +5401,14 @@ fit_timescale_ml <- function(model,
 
     ## Rate parameters
 
-    pars <- estimate_lognormal_parameters(state)
+    pars <- estimate_lognormal_parameters(state, sigma_min = model$sigma_min)
+
+    root_age <- state$node_ages[model$root]
+    root_max_active <- FALSE
+    if (!is.null(model$root_max_age)) {
+        root_range <- model$root_max_age - model$minimum_ages[model$root]
+        root_max_active <- (model$root_max_age - root_age) <= 1e-4 * root_range
+    }
 
     result <- list(
         model = model,
@@ -5366,14 +5418,33 @@ fit_timescale_ml <- function(model,
         rates = state$rates,
         theta = fit$par,
         mu = pars$mu,
+        sigma2_mle = pars$sigma2_mle,
         sigma2 = pars$sigma2,
+        sigma_min = model$sigma_min,
+        sigma_floor_active = pars$floor_active,
+        root_max_age = model$root_max_age,
+        root_max_active = root_max_active,
         logLik = -fit$value,
         convergence = fit$convergence,
         counts = fit$counts,
         message = fit$message
     )
-    result$tree$root.time <- result$node_ages[model$root]
+    result$tree$root.time <- root_age
 
+    if (isTRUE(result$root_max_active)) {
+        warning(
+            "The fitted root age is at or very near 'root_max_age'. ",
+            "The estimate is boundary-constrained and may be sensitive to this bound.",
+            call. = FALSE
+        )
+    }
+
+    if (isTRUE(result$sigma_floor_active)) {
+        message(
+            "The minimum log-rate SD constraint was active: the fitted node ages ",
+            "are conditional on sigma_min = ", model$sigma_min, "."
+        )
+    }
 
     class(result) <- "timescale_ml_fit"
 
