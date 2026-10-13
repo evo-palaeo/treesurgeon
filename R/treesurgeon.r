@@ -5437,28 +5437,49 @@ objective <- function(theta, model) {
 #' @param model A \code{"timescale_ml"} object.
 #' @param method Optimisation method passed to \code{\link[stats]{optim}}.
 #' @param control A list of control arguments passed to \code{\link[stats]{optim}}.
+#' @param n_starts Number of optimisation starts. The first uses the default
+#'   initial node ages; additional starts are random.
 #'
 #' @return An object of class \code{"timescale_ml_fit"}.
 #'
 #' @export
 fit_timescale_ml <- function(model,
                              method = "BFGS",
-                             control = list()) {
+                             control = list(),
+                             n_starts = 1L) {
+    if (length(n_starts) != 1L || !is.finite(n_starts) ||
+        n_starts < 1 || n_starts != as.integer(n_starts)) {
+        stop("'n_starts' must be a single positive integer.")
+    }
+    n_starts <- as.integer(n_starts)
+
     ## Initial parameter values
 
     node_ages0 <- initial_node_ages(model)
 
     theta0 <- node_ages_to_theta(node_ages0, model)
 
-    ## Optimisation
+    ## Optimisation from the default start and additional random starts.
 
-    fit <- optim(
-        par = theta0,
-        fn = objective,
-        model = model,
-        method = method,
-        control = control
-    )
+    fits <- vector("list", n_starts)
+    for (i in seq_len(n_starts)) {
+        start <- if (i == 1L) theta0 else stats::rnorm(model$n_node)
+        fits[[i]] <- optim(
+            par = start,
+            fn = objective,
+            model = model,
+            method = method,
+            control = control
+        )
+    }
+
+    values <- vapply(fits, function(x) x$value, numeric(1))
+    valid <- which(is.finite(values))
+    if (length(valid) == 0L) {
+        stop("All optimisation starts returned non-finite objective values.")
+    }
+    best_start <- valid[which.min(values[valid])]
+    fit <- fits[[best_start]]
 
     ## Final state
 
@@ -5544,7 +5565,9 @@ fit_timescale_ml <- function(model,
         logLik = -fit$value,
         convergence = fit$convergence,
         counts = fit$counts,
-        message = fit$message
+        message = fit$message,
+        n_starts = n_starts,
+        best_start = best_start
     )
     result$tree$root.time <- root_age
 
