@@ -4,7 +4,14 @@
 \alias{timescale_ml}
 \title{Construct a maximum-likelihood time-scaling model}
 \usage{
-timescale_ml(tree, tip_ages, calibrations, replace_zeros = TRUE)
+timescale_ml(
+  tree,
+  tip_ages,
+  calibrations,
+  replace_zeros = TRUE,
+  sigma_min = 0.01,
+  root_max_age = NULL
+)
 }
 \arguments{
 \item{tree}{a phylogenetic tree of class \code{"phylo"} with branch lengths proportional to evolutionary change.}
@@ -14,6 +21,10 @@ timescale_ml(tree, tip_ages, calibrations, replace_zeros = TRUE)
 \item{calibrations}{a list of node age calibration distributions indexed by node number. Uncalibrated nodes should be assigned \code{NULL}.}
 
 \item{replace_zeros}{logical indicating whether zero-length branches should be replaced with a small positive value before fitting.}
+
+\item{sigma_min}{positive minimum standard deviation for log-rates. The profiled log-rate variance is constrained to be at least `sigma_min^2`, preventing variance collapse.}
+
+\item{root_max_age}{optional finite upper bound on the root age, in the same time units and age coordinate as `tip_ages` and the calibrations. The default `NULL` leaves the root unbounded above.}
 }
 \value{
 An object of class \code{"timescale_ml"} containing the phylogeny, tip ages, calibrations and information required for maximum-likelihood optimisation.
@@ -144,17 +155,7 @@ Direct optimisation of node ages is difficult because every node must simultaneo
 
 Standard optimisation routines such as \code{optim()} are designed for unconstrained optimisation and do not naturally enforce these relationships. To avoid the need for constrained optimisation, unconstrained parameters are instead transformed into valid node ages.
 
-The root node has no parent to bound its age from above, and so is parameterised separately from all other nodes:
-
-\deqn{
-\mathrm{age}_{\mathrm{root}}
-=
-\mathrm{minimum\_root\_age}
-+
-\exp(\theta_1)
-}
-
-Since \eqn{\exp(\theta_1)} is always positive, this guarantees that the inferred root age is always older than its minimum permissible age, with no upper limit imposed.
+The root node has no parent to bound its age from above, and so is parameterised separately from all other nodes. By default, its age is the minimum permissible root age plus \eqn{\exp(\theta_1)}, leaving it unbounded above. If `root_max_age` is supplied, a logistic transformation instead constrains the root age to the interval between its minimum permissible age and the specified maximum. The maximum must exceed the minimum permissible root age.
 
 All remaining internal nodes are parameterised relative to their parent. Each parameter is mapped onto the interval \eqn{(0,1)} using the logistic transformation:
 
@@ -185,6 +186,8 @@ Because \eqn{u_i} is always strictly between 0 and 1, every node age is guarante
 \strong{Rate model}
 
 Once a candidate set of node ages has been proposed, branch durations are determined immediately, and branch-specific evolutionary rates follow by dividing the observed evolutionary change by the inferred branch duration. Branch rates are therefore not optimisation parameters in their own right; they are entirely implied by the proposed node ages.
+
+If `sigma_min` is supplied, the standard deviation of log-rates is constrained to be at least this value. This prevents the profiled likelihood from diverging when the implied branch rates become identical. The fit reports both the unconstrained variance estimate (`sigma2_mle`) and the variance used in the likelihood (`sigma2`), and flags when the constraint is active. Because this is a substantive constraint on rate heterogeneity, users should assess sensitivity to plausible values; no universal value is assumed by default.
 
 The current implementation assumes that the logarithm of the branch rates follows a normal distribution:
 

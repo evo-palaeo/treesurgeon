@@ -57,20 +57,30 @@ import(ape)
 import(phangorn)
 import(phytools)
 importFrom(Quartet,QuartetStatus)
-importFrom(TreeDist,ClusteringInfoDist)
-importFrom(TreeDist,MatchingSplitInfoDistance)
+importFrom(TreeDist,
+  ClusteringInfoDist,
+  MatchingSplitInfoDistance
+)
 importFrom(TreeTools,CollapseNode)
-importFrom(ape,Nedge)
-importFrom(ape,node.depth.edgelength)
-importFrom(ape,plot.phylo)
-importFrom(ape,rtree)
+importFrom(ape,
+  Nedge,
+  node.depth.edgelength,
+  plot.phylo,
+  rtree
+)
 importFrom(doParallel,registerDoParallel)
-importFrom(foreach,"%dopar%")
-importFrom(foreach,foreach)
+importFrom(foreach,
+  "%dopar%",
+  foreach
+)
 importFrom(iterators,iter)
-importFrom(parallel,detectCores)
-importFrom(parallel,makeCluster)
+importFrom(parallel,
+  detectCores,
+  makeCluster
+)
 importFrom(phangorn,Descendants)
-importFrom(phytools,fitMk)
-importFrom(phytools,sim.history)
+importFrom(phytools,
+  fitMk,
+  sim.history
+)
 importFrom(stringr,str_extract_all)
