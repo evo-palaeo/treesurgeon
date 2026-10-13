@@ -99,3 +99,45 @@ test_that("a non-converged fit warns and a converged fit does not", {
     )
     expect_identical(as.integer(fit$convergence), 0L)
 })
+
+
+test_that("extreme parameters stay feasible and invalid parameters get a penalty", {
+    tree <- treesurgeon::KeatingDonoghueTree
+    calibrations <- vector("list", ape::Ntip(tree) + ape::Nnode(tree))
+    calibrations[[22]] <- treesurgeon::gamma_calib(
+        age_min = 516.1, age_max = 636.1, shape = 1.2, position = 0.99
+    )
+    calibrations[[24]] <- treesurgeon::gamma_calib(
+        age_min = 461.1, age_max = 636.1, shape = 1, position = 0.99
+    )
+    model <- suppressMessages(treesurgeon::timescale_ml(
+        tree = tree,
+        tip_ages = tree$tip_ages,
+        calibrations = calibrations,
+        replace_zeros = TRUE,
+        root_max_age = 4540
+    ))
+
+    # Node 28 shares its minimum age with parent 27. Extreme values must still
+    # map to representable, strictly ordered ages for this valid model.
+    for (i in seq_len(model$n_node)) {
+        for (extreme in c(-1000, 1000)) {
+            extreme_theta <- rep(0, model$n_node)
+            extreme_theta[i] <- extreme
+            ages <- treesurgeon:::theta_to_node_ages(extreme_theta, model)
+            durations <- ages[model$parent] - ages[model$child]
+            expect_true(all(is.finite(ages)))
+            expect_true(all(is.finite(durations) & durations > 0))
+        }
+    }
+
+    expect_identical(
+        treesurgeon:::objective(rep(NA_real_, model$n_node), model),
+        treesurgeon:::infeasible_objective_value
+    )
+
+    set.seed(1)
+    fit <- suppressMessages(treesurgeon::fit_timescale_ml(model, n_starts = 10L))
+    expect_true(is.finite(fit$logLik))
+    expect_true(all(is.finite(fit$node_ages)))
+})

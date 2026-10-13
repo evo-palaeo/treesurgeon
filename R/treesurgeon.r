@@ -5089,6 +5089,10 @@ is_near_upper_bound <- function(age, lower, upper, tolerance = 1e-4) {
 # Transform optimisation parameters into node ages
 # ==============================================================================
 
+# Keep transformed ages strictly inside their feasible intervals despite
+# floating-point saturation of expit() or underflow/overflow of exp().
+theta_limit <- 20
+
 theta_to_node_ages <- function(theta, model) {
     if (length(theta) != model$n_node) {
         stop("Incorrect number of optimisation parameters.")
@@ -5106,10 +5110,11 @@ theta_to_node_ages <- function(theta, model) {
     root_upper <- node_upper_age(model, root)
 
     if (is.finite(root_upper)) {
-        node_ages[root] <-
-            root_min + expit(theta[1]) * (root_upper - root_min)
+        root_theta <- pmax(-theta_limit, pmin(theta_limit, theta[1]))
+        node_ages[root] <- root_min + expit(root_theta) * (root_upper - root_min)
     } else {
-        node_ages[root] <- root_min + exp(theta[1])
+        root_theta <- pmax(-theta_limit, pmin(theta_limit, theta[1]))
+        node_ages[root] <- root_min + exp(root_theta)
     }
 
     ## Remaining internal nodes. A uniform calibration maximum is intersected
@@ -5121,10 +5126,17 @@ theta_to_node_ages <- function(theta, model) {
         upper <- node_upper_age(model, node, parent_age = node_ages[parent])
 
         if (!is.finite(upper) || upper <= lower) {
-            stop("No feasible age interval for node ", node, ".")
+            stop(structure(
+                class = c("treesurgeon_infeasible_ages", "error", "condition"),
+                list(
+                    message = paste0("No feasible age interval for node ", node, "."),
+                    call = NULL
+                )
+            ))
         }
 
-        u <- expit(theta[i])
+        bounded_theta <- pmax(-theta_limit, pmin(theta_limit, theta[i]))
+        u <- expit(bounded_theta)
         node_ages[node] <- lower + u * (upper - lower)
     }
 
@@ -5413,16 +5425,37 @@ calibration_log_density <- function(age, calibration) {
 # which the profile log-likelihood of the branch rates and the contribution of
 # any node-age calibrations are evaluated.
 # ==============================================================================
+infeasible_objective_value <- 1e10
+
 objective <- function(theta, model) {
+    ## Extreme theta values can collapse a parent age onto its lower bound
+    ## (the logistic transform saturates), leaving a child with no feasible
+    ## interval. Treat such points as very poor rather than aborting the fit.
+    infeasible_value <- infeasible_objective_value
+
+    if (length(theta) != model$n_node || any(!is.finite(theta))) {
+        return(infeasible_value)
+    }
+
     ## Build optimisation state
 
-    state <- build_state(theta, model)
+    state <- tryCatch(
+        build_state(theta, model),
+        treesurgeon_infeasible_ages = function(e) NULL
+    )
+    if (is.null(state) || any(!is.finite(state$log_rates))) {
+        return(infeasible_value)
+    }
 
     ## Evaluate log-likelihood
 
     logLik <-
         logLik_lognormal_profile(state, sigma_min = model$sigma_min) +
         logLik_calibrations(state, model)
+
+    if (!is.finite(logLik)) {
+        return(infeasible_value)
+    }
 
     ## Optimisers minimise
 
@@ -5476,7 +5509,7 @@ fit_timescale_ml <- function(model,
     }
 
     values <- vapply(fits, function(x) x$value, numeric(1))
-    valid <- which(is.finite(values))
+    valid <- which(is.finite(values) & values < infeasible_objective_value)
     if (length(valid) == 0L) {
         stop("All optimisation starts returned non-finite objective values.")
     }
