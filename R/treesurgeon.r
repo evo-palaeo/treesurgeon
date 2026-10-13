@@ -5440,7 +5440,9 @@ objective <- function(theta, model) {
 #' @param n_starts Number of optimisation starts. The first uses the default
 #'   initial node ages; additional starts are random.
 #'
-#' @return An object of class \code{"timescale_ml_fit"}.
+#' @return An object of class \code{"timescale_ml_fit"}. A warning is issued
+#'   if the selected fit has a non-zero \code{\link[stats]{optim}} convergence
+#'   code, which is stored in the \code{convergence} element.
 #'
 #' @export
 fit_timescale_ml <- function(model,
@@ -5576,6 +5578,17 @@ fit_timescale_ml <- function(model,
             "The fitted root age is at or very near its hard upper bound (",
             root_upper_bound_source,
             "). The estimate is boundary-constrained and may be sensitive to this bound.",
+            call. = FALSE
+        )
+    }
+
+    if (!identical(as.integer(fit$convergence), 0L)) {
+        warning(
+            "The best optimisation start did not converge cleanly ",
+            "(optim convergence code ", fit$convergence,
+            if (!is.null(fit$message)) paste0(": ", fit$message) else "",
+            "). Consider increasing 'control$maxit', using more 'n_starts', ",
+            "or trying a different 'method'.",
             call. = FALSE
         )
     }

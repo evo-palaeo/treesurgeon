@@ -17,7 +17,9 @@ fit_timescale_ml(model, method = "BFGS", control = list(), n_starts = 1L)
 initial node ages; additional starts are random.}
 }
 \value{
-An object of class \code{"timescale_ml_fit"}.
+An object of class \code{"timescale_ml_fit"}. A warning is issued
+  if the selected fit has a non-zero \code{\link[stats]{optim}} convergence
+  code, which is stored in the \code{convergence} element.
 }
 \description{
 Estimates divergence times under the specified rate model.

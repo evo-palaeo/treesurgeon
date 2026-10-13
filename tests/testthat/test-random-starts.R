@@ -75,3 +75,27 @@ test_that("multiple starts reach the best optimum found by an independent grid s
         expect_gte(fit$logLik, reference_loglik - 1e-6)
     }
 })
+
+
+test_that("a non-converged fit warns and a converged fit does not", {
+    model <- make_constraint_test_model()
+
+    expect_warning(
+        suppressMessages(treesurgeon::fit_timescale_ml(
+            model,
+            method = "Nelder-Mead",
+            control = list(maxit = 2)
+        )),
+        "did not converge"
+    )
+
+    fit <- withCallingHandlers(
+        treesurgeon::fit_timescale_ml(
+            model,
+            method = "Nelder-Mead",
+            control = list(maxit = 5000, reltol = 1e-10)
+        ),
+        message = function(m) invokeRestart("muffleMessage")
+    )
+    expect_identical(as.integer(fit$convergence), 0L)
+})
