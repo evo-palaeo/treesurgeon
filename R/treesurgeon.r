@@ -4473,8 +4473,8 @@ get_node_ages <- function(tree) {
 #' @param tip_ages a numeric vector giving the ages of the tree tips. The vector should have length \code{Ntip(tree)} and be ordered to match \code{tree$tip.label}.
 #' @param calibrations a list of node age calibration distributions indexed by node number. Uncalibrated nodes should be assigned \code{NULL}.
 #' @param replace_zeros logical indicating whether zero-length branches should be replaced with a small positive value before fitting.
-#' @param sigma_min positive minimum standard deviation for log-rates. The profiled log-rate variance is constrained to be at least `sigma_min^2`, preventing variance collapse.
-#' @param root_max_age optional finite upper bound on the root age, in the same time units and age coordinate as `tip_ages` and the calibrations. The default `NULL` leaves the root unbounded above.
+#' @param sigma_min positive minimum standard deviation for log-rates. The profiled log-rate variance is constrained to be at least `sigma_min^2`, preventing variance collapse. Set to `NULL` to disable the constraint. The default is `0.01` (provisional; assess sensitivity for your application).
+#' @param root_max_age optional finite upper bound on the root age, in the same time units and age coordinate as `tip_ages` and the calibrations. The default `NULL` leaves the root unbounded above unless it has a uniform calibration, whose maximum is always a hard upper bound.
 #'
 #' @return An object of class \code{"timescale_ml"} containing the phylogeny, tip ages, calibrations and information required for maximum-likelihood optimisation.
 #'
@@ -4597,13 +4597,14 @@ get_node_ages <- function(tree) {
 #' \item Be older than all of its descendants.
 #' \item Be younger than its parent.
 #' \item Satisfy any specified minimum calibration age.
+#' \item Remain younger than any hard maximum imposed by a uniform calibration.
 #' }
 #'
 #' Standard optimisation routines such as \code{optim()} are designed for unconstrained optimisation and do not naturally enforce these relationships. To avoid the need for constrained optimisation, unconstrained parameters are instead transformed into valid node ages.
 #'
-#' The root node has no parent to bound its age from above, and so is parameterised separately from all other nodes. By default, its age is the minimum permissible root age plus \eqn{\exp(\theta_1)}, leaving it unbounded above. If `root_max_age` is supplied, a logistic transformation instead constrains the root age to the interval between its minimum permissible age and the specified maximum. The maximum must exceed the minimum permissible root age.
+#' The root node has no parent to bound its age from above, and so is parameterised separately. If a finite hard upper bound applies (from `root_max_age` and/or a uniform calibration on the root), a logistic transformation constrains the root age to the interval between its minimum permissible age and the tightest upper bound. Otherwise, its age is the minimum permissible root age plus \eqn{\exp(\theta_1)}. Any hard upper bound must exceed the minimum permissible root age.
 #'
-#' All remaining internal nodes are parameterised relative to their parent. Each parameter is mapped onto the interval \eqn{(0,1)} using the logistic transformation:
+#' All remaining internal nodes are parameterised relative to their parent. A node's effective upper bound is the younger of its parent's age and its uniform calibration maximum, if it has a uniform calibration. Gamma and exponential `age_max` values are soft maxima and do not constrain this upper bound. Each parameter is mapped onto the interval \eqn{(0,1)} using the logistic transformation:
 #'
 #' \deqn{
 #' u_i =
@@ -4619,21 +4620,21 @@ get_node_ages <- function(tree) {
 #' +
 #' u_i
 #' \left(
-#' \mathrm{parent\_age}
+#' \mathrm{upper\_age}_i
 #' -
 #' \mathrm{minimum\_age}_i
 #' \right)
 #' }
 #'
-#' where \eqn{\mathrm{minimum\_age}_i} is the oldest age permitted by the ages of descendant nodes and any minimum calibration, and \eqn{\mathrm{parent\_age}} is the age of the node's immediate ancestor, calculated earlier in the same traversal.
+#' where \eqn{\mathrm{minimum\_age}_i} is the oldest age permitted by descendant ages and any minimum calibration. The effective upper age is the parent's age, reduced to the node's uniform-calibration maximum when one exists.
 #'
-#' Because \eqn{u_i} is always strictly between 0 and 1, every node age is guaranteed to fall strictly between its minimum permissible age and its parent's age. As a result, every possible value of \code{theta} corresponds to a valid time tree, allowing standard unconstrained optimisation algorithms to be used efficiently, without rejecting or correcting invalid candidate solutions.
+#' Because \eqn{u_i} is always strictly between 0 and 1, every node age is guaranteed to fall strictly between its minimum permissible age and its effective upper age. This upper age is never older than the parent and respects any uniform-calibration maximum, so the transformation avoids proposing ages outside the hard temporal bounds.
 #'
 #' \strong{Rate model}
 #'
 #' Once a candidate set of node ages has been proposed, branch durations are determined immediately, and branch-specific evolutionary rates follow by dividing the observed evolutionary change by the inferred branch duration. Branch rates are therefore not optimisation parameters in their own right; they are entirely implied by the proposed node ages.
 #'
-#' If `sigma_min` is supplied, the standard deviation of log-rates is constrained to be at least this value. This prevents the profiled likelihood from diverging when the implied branch rates become identical. The fit reports both the unconstrained variance estimate (`sigma2_mle`) and the variance used in the likelihood (`sigma2`), and flags when the constraint is active. Because this is a substantive constraint on rate heterogeneity, users should assess sensitivity to plausible values; no universal value is assumed by default.
+#' If `sigma_min` is supplied, the standard deviation of log-rates is constrained to be at least this value. This prevents the profiled likelihood from diverging when the implied branch rates become identical. The fit reports both the unconstrained variance estimate (`sigma2_mle`) and the variance used in the likelihood (`sigma2`), and flags when the constraint is active. Because this is a substantive constraint on rate heterogeneity, users should assess sensitivity to plausible values. The default of 0.01 is provisional and should be validated for the intended applications.
 #'
 #' The current implementation assumes that the logarithm of the branch rates follows a normal distribution:
 #'
@@ -4760,7 +4761,7 @@ get_node_ages <- function(tree) {
 ##
 ## Maximum-likelihood time-scaling of phylogenetic trees
 ##
-## Version: 1.2
+## Version: 1.3
 ###############################################################################
 
 
@@ -4986,6 +4987,18 @@ compute_lower_bounds <- function(model) {
                 calib_min,
                 child_minimum_ages
             )
+
+        ## Uniform calibration maxima are hard support limits. The minimum
+        ## permissible age must be strictly younger than this maximum, otherwise
+        ## no positive-duration temporal placement exists for this node.
+        uniform_max <- uniform_calibration_max_age(model, node)
+        if (is.finite(uniform_max) && minimum_ages[node] >= uniform_max) {
+            stop(
+                "Infeasible uniform calibration at node ", node, ": age_max (",
+                signif(uniform_max, 6), ") must exceed the minimum permissible age (",
+                signif(minimum_ages[node], 6), ")."
+            )
+        }
     }
 
     ## Sanity check
@@ -5018,6 +5031,60 @@ expit <- function(x) {
     )
 }
 
+
+# ==============================================================================
+# Hard upper bounds from uniform calibrations
+#
+# Uniform calibration maxima are true support limits. Gamma and exponential
+# age_max values are soft maxima and must not constrain node ages.
+# ==============================================================================
+uniform_calibration_max_age <- function(model, node) {
+    calibration <- model$calibrations[[node]]
+
+    if (is.null(calibration) ||
+        !identical(calibration$distribution, "uniform")) {
+        return(Inf)
+    }
+
+    calibration$age_max
+}
+
+
+# Return the tightest hard upper age bound for a node. For non-root nodes this
+# also includes the age of the parent. An explicit root_max_age applies only to
+# the root, and intersects with any uniform calibration maximum on the root.
+node_upper_age <- function(model, node, parent_age = NULL) {
+    upper <- uniform_calibration_max_age(model, node)
+
+    if (node == model$root && !is.null(model$root_max_age)) {
+        upper <- min(upper, model$root_max_age)
+    }
+
+    if (!is.null(parent_age)) {
+        upper <- min(upper, parent_age)
+    }
+
+    upper
+}
+
+
+# Consistent tolerance for detecting estimates at hard upper boundaries. The
+# tiny numerical allowance prevents floating-point round-off from classifying
+# an otherwise valid fitted age as outside the bound.
+is_near_upper_bound <- function(age, lower, upper, tolerance = 1e-4) {
+    if (length(age) != 1L || length(lower) != 1L || length(upper) != 1L ||
+        !is.finite(age) || !is.finite(lower) || !is.finite(upper) ||
+        upper <= lower || !is.finite(tolerance) || tolerance < 0) {
+        return(FALSE)
+    }
+
+    range <- upper - lower
+    gap <- upper - age
+    numerical_allowance <- sqrt(.Machine$double.eps) * range
+
+    gap >= -numerical_allowance && gap <= tolerance * range
+}
+
 # ==============================================================================
 # Transform optimisation parameters into node ages
 # ==============================================================================
@@ -5030,36 +5097,35 @@ theta_to_node_ages <- function(theta, model) {
     node_ages <- numeric(model$n_tip + model$n_node)
 
     ## Fixed tip ages
-
     node_ages[seq_len(model$n_tip)] <- model$tip_ages
 
-    ## Root age
-
+    ## Root age. It has a finite upper bound if root_max_age or a uniform
+    ## calibration on the root supplies one.
     root <- model$root
+    root_min <- model$minimum_ages[root]
+    root_upper <- node_upper_age(model, root)
 
-    if (is.null(model$root_max_age)) {
+    if (is.finite(root_upper)) {
         node_ages[root] <-
-            model$minimum_ages[root] +
-            exp(theta[1])
+            root_min + expit(theta[1]) * (root_upper - root_min)
     } else {
-        node_ages[root] <-
-            model$minimum_ages[root] +
-            expit(theta[1]) *
-                (model$root_max_age - model$minimum_ages[root])
+        node_ages[root] <- root_min + exp(theta[1])
     }
 
-    ## Remaining internal nodes
-
+    ## Remaining internal nodes. A uniform calibration maximum is intersected
+    ## with the parent's age, keeping every proposed age inside its hard support.
     for (i in 2:model$n_node) {
         node <- model$internal_nodes_preorder[i]
-
         parent <- model$parent_of[node]
+        lower <- model$minimum_ages[node]
+        upper <- node_upper_age(model, node, parent_age = node_ages[parent])
+
+        if (!is.finite(upper) || upper <= lower) {
+            stop("No feasible age interval for node ", node, ".")
+        }
 
         u <- expit(theta[i])
-
-        node_ages[node] <-
-            model$minimum_ages[node] +
-            u * (node_ages[parent] - model$minimum_ages[node])
+        node_ages[node] <- lower + u * (upper - lower)
     }
 
     node_ages
@@ -5070,47 +5136,50 @@ theta_to_node_ages <- function(theta, model) {
 # ==============================================================================
 
 node_ages_to_theta <- function(node_ages, model) {
+    if (length(node_ages) != model$n_tip + model$n_node) {
+        stop("'node_ages' must have length Ntip + Nnode.")
+    }
+
     theta <- numeric(model$n_node)
 
     ## Root
-
     root <- model$root
+    root_min <- model$minimum_ages[root]
+    root_upper <- node_upper_age(model, root)
 
-    if (is.null(model$root_max_age)) {
-        theta[1] <- log(
-            node_ages[root] - model$minimum_ages[root]
-        )
-    } else {
+    if (is.finite(root_upper)) {
         root_fraction <-
-            (node_ages[root] - model$minimum_ages[root]) /
-                (model$root_max_age - model$minimum_ages[root])
+            (node_ages[root] - root_min) / (root_upper - root_min)
+
+        if (!is.finite(root_fraction) || root_fraction <= 0 || root_fraction >= 1) {
+            stop("Root age must be strictly between its lower and upper feasible bounds.")
+        }
+
         theta[1] <- logit(root_fraction)
+    } else {
+        root_offset <- node_ages[root] - root_min
+        if (!is.finite(root_offset) || root_offset <= 0) {
+            stop("Root age must be older than its minimum permissible age.")
+        }
+        theta[1] <- log(root_offset)
     }
 
     ## Remaining internal nodes
-
     for (i in 2:model$n_node) {
         node <- model$internal_nodes_preorder[i]
-
         parent <- model$parent_of[node]
+        lower <- model$minimum_ages[node]
+        upper <- node_upper_age(model, node, parent_age = node_ages[parent])
+        fraction <- (node_ages[node] - lower) / (upper - lower)
 
-        u <-
-            (node_ages[node] - model$minimum_ages[node]) /
-                (node_ages[parent] - model$minimum_ages[node])
-        ####
-        if (u <= 0 || u >= 1) {
-            cat("\n")
-            cat("Node:", node, "\n")
-            cat("Parent:", parent, "\n")
-            cat("u =", format(u, digits = 20), "\n")
-            cat("node age =", format(node_ages[node], digits = 20), "\n")
-            cat("parent age =", format(node_ages[parent], digits = 20), "\n")
-            cat("minimum age =", format(model$minimum_ages[node], digits = 20), "\n")
-
-            stop("u outside (0,1)")
+        if (!is.finite(fraction) || fraction <= 0 || fraction >= 1) {
+            stop(
+                "Age for node ", node,
+                " must be strictly between its lower and upper feasible bounds."
+            )
         }
-        ####
-        theta[i] <- logit(u)
+
+        theta[i] <- logit(fraction)
     }
 
     theta
@@ -5121,8 +5190,8 @@ node_ages_to_theta <- function(node_ages, model) {
 #
 # Generates a feasible starting set of node ages for optimisation. Tip ages are
 # fixed, whilst internal nodes are placed between their minimum permissible age
-# and the age of their parent. The resulting ages satisfy all topological and
-# calibration constraints and provide a valid starting point for optimisation.
+# and their effective upper age (the parent age and any uniform calibration
+# maximum). The resulting ages satisfy topological and hard calibration bounds.
 # ==============================================================================
 initial_node_ages <- function(model,
                               alpha = 0.5) {
@@ -5130,38 +5199,38 @@ initial_node_ages <- function(model,
         stop("'alpha' must lie strictly between 0 and 1.")
     }
 
-    ## Initialise node ages
-
     node_ages <- numeric(model$n_tip + model$n_node)
-
-    ## Fixed tip ages
-
     node_ages[seq_len(model$n_tip)] <- model$tip_ages
 
-    ## Root
-
+    ## Root: use an interior point when a hard upper bound applies; otherwise
+    ## retain the existing one-unit offset above its minimum permissible age.
     root <- model$root
+    root_min <- model$minimum_ages[root]
+    root_upper <- node_upper_age(model, root)
 
-    if (is.null(model$root_max_age)) {
-        node_ages[root] <- model$minimum_ages[root] + 1
+    if (is.finite(root_upper)) {
+        if (root_upper <= root_min) {
+            stop("No feasible age interval for the root.")
+        }
+        node_ages[root] <- root_min + alpha * (root_upper - root_min)
     } else {
-        node_ages[root] <- (
-            model$minimum_ages[root] + model$root_max_age
-        ) / 2
+        node_ages[root] <- root_min + 1
     }
 
-    ## Remaining internal nodes
-
+    ## Descendants are initialised inside the intersection of their parent's
+    ## age and any uniform calibration maximum. Soft maxima are ignored here.
     if (model$n_node > 1) {
         for (i in 2:model$n_node) {
             node <- model$internal_nodes_preorder[i]
-
             parent <- model$parent_of[node]
+            lower <- model$minimum_ages[node]
+            upper <- node_upper_age(model, node, parent_age = node_ages[parent])
 
-            node_ages[node] <-
-                model$minimum_ages[node] +
-                alpha * (node_ages[parent] -
-                    model$minimum_ages[node])
+            if (!is.finite(upper) || upper <= lower) {
+                stop("No feasible age interval for node ", node, ".")
+            }
+
+            node_ages[node] <- lower + alpha * (upper - lower)
         }
     }
 
@@ -5403,11 +5472,54 @@ fit_timescale_ml <- function(model,
 
     pars <- estimate_lognormal_parameters(state, sigma_min = model$sigma_min)
 
-    root_age <- state$node_ages[model$root]
+    root <- model$root
+    root_age <- state$node_ages[root]
+    root_min <- model$minimum_ages[root]
+    root_upper <- node_upper_age(model, root)
+    root_uniform_max <- uniform_calibration_max_age(model, root)
+
+    root_upper_active <- is_near_upper_bound(
+        root_age, root_min, root_upper
+    )
+
     root_max_active <- FALSE
     if (!is.null(model$root_max_age)) {
-        root_range <- model$root_max_age - model$minimum_ages[model$root]
-        root_max_active <- (model$root_max_age - root_age) <= 1e-4 * root_range
+        root_max_active <- is_near_upper_bound(
+            root_age, root_min, model$root_max_age
+        )
+    }
+
+    root_uniform_max_active <- FALSE
+    if (is.finite(root_uniform_max)) {
+        root_uniform_max_active <- is_near_upper_bound(
+            root_age, root_min, root_uniform_max
+        )
+    }
+
+    root_upper_bound_source <- if (!is.finite(root_upper)) {
+        "none"
+    } else if (is.null(model$root_max_age)) {
+        "uniform calibration"
+    } else if (!is.finite(root_uniform_max) || model$root_max_age < root_uniform_max) {
+        "root_max_age"
+    } else if (root_uniform_max < model$root_max_age) {
+        "uniform calibration"
+    } else {
+        "root_max_age and uniform calibration"
+    }
+
+    ## Record which uniformly calibrated nodes approach their hard upper bounds.
+    uniform_max_active <- stats::setNames(
+        rep(FALSE, length(model$internal_nodes_postorder)),
+        as.character(model$internal_nodes_postorder)
+    )
+    for (node in model$internal_nodes_postorder) {
+        uniform_max <- uniform_calibration_max_age(model, node)
+        if (is.finite(uniform_max)) {
+            uniform_max_active[as.character(node)] <- is_near_upper_bound(
+                state$node_ages[node], model$minimum_ages[node], uniform_max
+            )
+        }
     }
 
     result <- list(
@@ -5424,6 +5536,11 @@ fit_timescale_ml <- function(model,
         sigma_floor_active = pars$floor_active,
         root_max_age = model$root_max_age,
         root_max_active = root_max_active,
+        root_upper_bound = if (is.finite(root_upper)) root_upper else NULL,
+        root_upper_bound_source = root_upper_bound_source,
+        root_upper_active = root_upper_active,
+        root_uniform_max_active = root_uniform_max_active,
+        uniform_max_active = uniform_max_active,
         logLik = -fit$value,
         convergence = fit$convergence,
         counts = fit$counts,
@@ -5431,10 +5548,11 @@ fit_timescale_ml <- function(model,
     )
     result$tree$root.time <- root_age
 
-    if (isTRUE(result$root_max_active)) {
+    if (isTRUE(result$root_upper_active)) {
         warning(
-            "The fitted root age is at or very near 'root_max_age'. ",
-            "The estimate is boundary-constrained and may be sensitive to this bound.",
+            "The fitted root age is at or very near its hard upper bound (",
+            root_upper_bound_source,
+            "). The estimate is boundary-constrained and may be sensitive to this bound.",
             call. = FALSE
         )
     }

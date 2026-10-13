@@ -22,9 +22,9 @@ timescale_ml(
 
 \item{replace_zeros}{logical indicating whether zero-length branches should be replaced with a small positive value before fitting.}
 
-\item{sigma_min}{positive minimum standard deviation for log-rates. The profiled log-rate variance is constrained to be at least `sigma_min^2`, preventing variance collapse.}
+\item{sigma_min}{positive minimum standard deviation for log-rates. The profiled log-rate variance is constrained to be at least `sigma_min^2`, preventing variance collapse. Set to `NULL` to disable the constraint. The default is `0.01` (provisional; assess sensitivity for your application).}
 
-\item{root_max_age}{optional finite upper bound on the root age, in the same time units and age coordinate as `tip_ages` and the calibrations. The default `NULL` leaves the root unbounded above.}
+\item{root_max_age}{optional finite upper bound on the root age, in the same time units and age coordinate as `tip_ages` and the calibrations. The default `NULL` leaves the root unbounded above unless it has a uniform calibration, whose maximum is always a hard upper bound.}
 }
 \value{
 An object of class \code{"timescale_ml"} containing the phylogeny, tip ages, calibrations and information required for maximum-likelihood optimisation.
@@ -151,13 +151,14 @@ Direct optimisation of node ages is difficult because every node must simultaneo
 \item Be older than all of its descendants.
 \item Be younger than its parent.
 \item Satisfy any specified minimum calibration age.
+\item Remain younger than any hard maximum imposed by a uniform calibration.
 }
 
 Standard optimisation routines such as \code{optim()} are designed for unconstrained optimisation and do not naturally enforce these relationships. To avoid the need for constrained optimisation, unconstrained parameters are instead transformed into valid node ages.
 
-The root node has no parent to bound its age from above, and so is parameterised separately from all other nodes. By default, its age is the minimum permissible root age plus \eqn{\exp(\theta_1)}, leaving it unbounded above. If `root_max_age` is supplied, a logistic transformation instead constrains the root age to the interval between its minimum permissible age and the specified maximum. The maximum must exceed the minimum permissible root age.
+The root node has no parent to bound its age from above, and so is parameterised separately. If a finite hard upper bound applies (from `root_max_age` and/or a uniform calibration on the root), a logistic transformation constrains the root age to the interval between its minimum permissible age and the tightest upper bound. Otherwise, its age is the minimum permissible root age plus \eqn{\exp(\theta_1)}. Any hard upper bound must exceed the minimum permissible root age.
 
-All remaining internal nodes are parameterised relative to their parent. Each parameter is mapped onto the interval \eqn{(0,1)} using the logistic transformation:
+All remaining internal nodes are parameterised relative to their parent. A node's effective upper bound is the younger of its parent's age and its uniform calibration maximum, if it has a uniform calibration. Gamma and exponential `age_max` values are soft maxima and do not constrain this upper bound. Each parameter is mapped onto the interval \eqn{(0,1)} using the logistic transformation:
 
 \deqn{
 u_i =
@@ -173,21 +174,21 @@ Node ages are then calculated as:
 +
 u_i
 \left(
-\mathrm{parent\_age}
+\mathrm{upper\_age}_i
 -
 \mathrm{minimum\_age}_i
 \right)
 }
 
-where \eqn{\mathrm{minimum\_age}_i} is the oldest age permitted by the ages of descendant nodes and any minimum calibration, and \eqn{\mathrm{parent\_age}} is the age of the node's immediate ancestor, calculated earlier in the same traversal.
+where \eqn{\mathrm{minimum\_age}_i} is the oldest age permitted by descendant ages and any minimum calibration. The effective upper age is the parent's age, reduced to the node's uniform-calibration maximum when one exists.
 
-Because \eqn{u_i} is always strictly between 0 and 1, every node age is guaranteed to fall strictly between its minimum permissible age and its parent's age. As a result, every possible value of \code{theta} corresponds to a valid time tree, allowing standard unconstrained optimisation algorithms to be used efficiently, without rejecting or correcting invalid candidate solutions.
+Because \eqn{u_i} is always strictly between 0 and 1, every node age is guaranteed to fall strictly between its minimum permissible age and its effective upper age. This upper age is never older than the parent and respects any uniform-calibration maximum, so the transformation avoids proposing ages outside the hard temporal bounds.
 
 \strong{Rate model}
 
 Once a candidate set of node ages has been proposed, branch durations are determined immediately, and branch-specific evolutionary rates follow by dividing the observed evolutionary change by the inferred branch duration. Branch rates are therefore not optimisation parameters in their own right; they are entirely implied by the proposed node ages.
 
-If `sigma_min` is supplied, the standard deviation of log-rates is constrained to be at least this value. This prevents the profiled likelihood from diverging when the implied branch rates become identical. The fit reports both the unconstrained variance estimate (`sigma2_mle`) and the variance used in the likelihood (`sigma2`), and flags when the constraint is active. Because this is a substantive constraint on rate heterogeneity, users should assess sensitivity to plausible values; no universal value is assumed by default.
+If `sigma_min` is supplied, the standard deviation of log-rates is constrained to be at least this value. This prevents the profiled likelihood from diverging when the implied branch rates become identical. The fit reports both the unconstrained variance estimate (`sigma2_mle`) and the variance used in the likelihood (`sigma2`), and flags when the constraint is active. Because this is a substantive constraint on rate heterogeneity, users should assess sensitivity to plausible values. The default of 0.01 is provisional and should be validated for the intended applications.
 
 The current implementation assumes that the logarithm of the branch rates follows a normal distribution:
 
