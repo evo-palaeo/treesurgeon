@@ -4,7 +4,7 @@
 \alias{fit_timescale_ml}
 \title{Fit a maximum-likelihood time-scaling model}
 \usage{
-fit_timescale_ml(model, method = "BFGS", control = list())
+fit_timescale_ml(model, method = "BFGS", control = list(), n_starts = 1L)
 }
 \arguments{
 \item{model}{A \code{"timescale_ml"} object.}
@@ -12,6 +12,9 @@ fit_timescale_ml(model, method = "BFGS", control = list())
 \item{method}{Optimisation method passed to \code{\link[stats]{optim}}.}
 
 \item{control}{A list of control arguments passed to \code{\link[stats]{optim}}.}
+
+\item{n_starts}{Number of optimisation starts. The first uses the default
+initial node ages; additional starts are random.}
 }
 \value{
 An object of class \code{"timescale_ml_fit"}.
